@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Visitas</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="admin_estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Reporte de Visitas</h1>
+            <p>Filtrar y ver las visitas registradas.</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>Filtros</h2>
+                <form id="filter-form">
+                    <div class="form-group">
+                        <label for="advisor-filter">Asesor:</label>
+                        <select id="advisor-filter" name="advisor">
+                            <option value="">Todos los asesores</option>
+                            <!-- Opciones se cargarán desde JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="start-date">Fecha de Inicio:</label>
+                        <input type="date" id="start-date" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="end-date">Fecha de Fin:</label>
+                        <input type="date" id="end-date" name="endDate">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn">Filtrar</button>
+                        <button type="button" id="clear-filters" class="btn btn-secondary">Limpiar Filtros</button>
+                    </div>
+                </form>
+            </section>
+
+            <table id="report-table">
+                <thead>
+                    <tr>
+                        <th>Fecha de Visita</th>
+                        <th>Asesor</th>
+                        <th>Centro de Estudios</th>
+                        <th>Contacto</th>
+                        <th>Comentarios</th>
+                    </tr>
+                </thead>
+                <tbody id="report-body">
+                    <!-- Los datos del reporte se insertarán aquí -->
+                </tbody>
+            </table>
+        </main>
+
+        <footer>
+            <a href="admin.html">Volver al Panel de Administración</a>
+        </footer>
+    </div>
+
+    <script src="report.js"></script>
+</body>
+</html>

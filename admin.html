@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="admin_estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Panel de Administración</h1>
+            <p>Gestionar los datos maestros del sistema.</p>
+        </header>
+
+        <main id="admin-accordion">
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Asesores</button>
+                <div class="accordion-content">
+                    <form id="add-advisor-form" class="form-group">
+                        <label for="new-advisor-name">Nombre del Asesor:</label>
+                        <input type="text" id="new-advisor-name" name="name" required placeholder="Escribe el nombre completo">
+                        <button type="submit" class="btn">Añadir Asesor</button>
+                    </form>
+                    <hr>
+                    <h3>Asesores Actuales</h3>
+                    <ul id="advisor-list" class="resource-list"></ul>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Zonas</button>
+                <div class="accordion-content">
+                    <form id="add-zone-form" class="form-group">
+                        <label for="new-zone-name">Nombre de la Zona:</label>
+                        <input type="text" id="new-zone-name" name="name" required placeholder="Escribe el nombre de la zona">
+                        <button type="submit" class="btn">Añadir Zona</button>
+                    </form>
+                    <hr>
+                    <h3>Zonas Actuales</h3>
+                    <ul id="zone-list" class="resource-list"></ul>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Comentarios</button>
+                <div class="accordion-content">
+                    <form id="add-comment-form" class="form-group">
+                        <label for="new-comment-name">Texto del Comentario:</label>
+                        <input type="text" id="new-comment-name" name="name" required placeholder="Escribe el comentario">
+                        <button type="submit" class="btn">Añadir Comentario</button>
+                    </form>
+                    <hr>
+                    <h3>Comentarios Actuales</h3>
+                    <ul id="comment-list" class="resource-list"></ul>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Centros de Estudio</button>
+                <div class="accordion-content">
+                    <p>Aquí puedes editar los centros para corregir sus datos.</p>
+                    <table class="centers-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Centro</th>
+                                <th>Contacto</th>
+                                <th>Teléfono</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="centers-table-body">
+                            <!-- Filas de centros se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <a href="reporte.html">Ver Reporte de Visitas</a>
+            <a href="index.html" style="margin-left: 20px;">Ir al Formulario de Registro</a>
+        </footer>
+    </div>
+
+    <!-- Ventana Modal para Editar Centro -->
+    <div id="edit-center-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Editar Centro de Estudio</h2>
+            <form id="edit-center-form">
+                <input type="hidden" id="edit-center-id">
+                <div class="form-group">
+                    <label for="edit-center-name">Nombre del Centro:</label>
+                    <input type="text" id="edit-center-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-name">Nombre del Contacto:</label>
+                    <input type="text" id="edit-contact-name">
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-number">Número de Contacto:</label>
+                    <input type="tel" id="edit-contact-number">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+{
+  "advisors": [
+    {
+      "id": 1755228476207,
+      "name": "Leudis de los Santos"
+    },
+    {
+      "id": 1755228494725,
+      "name": "Isolina Pacheco"
+    },
+    {
+      "id": 1755228502839,
+      "name": "Jose Batista"
+    },
+    {
+      "id": 1755228508827,
+      "name": "Genesis Suriel"
+    },
+    {
+      "id": 1755228515979,
+      "name": "Griselda Paniagua"
+    },
+    {
+      "id": 1755228521318,
+      "name": "Moises Gross"
+    },
+    {
+      "id": 1755228538091,
+      "name": "Ruth Castillo"
+    }
+  ],
+  "centers": [
+    {
+      "name": "Colegio San José",
+      "contactName": "Director Mario Pardo",
+      "contactNumber": "555-1234",
+      "id": 1755258601000
+    },
+    {
+      "name": "Universidad del Saber",
+      "contactName": "Rectora Elena Solis",
+      "contactNumber": "555-5678",
+      "id": 1755258601001
+    },
+    {
+      "name": "Colegio Juan de los Santos",
+      "contactName": "Ivette",
+      "contactNumber": "8092240076",
+      "id": 1755258601002
+    },
+    {
+      "name": "Colegio Perpetuo Socorro",
+      "contactName": "Lidia Abreu",
+      "contactNumber": "8092240075",
+      "id": 1755258601003
+    },
+    {
+      "name": "San Miguel Arcangel",
+      "contactName": "Juan Perez",
+      "contactNumber": "8092240075",
+      "id": 1755258601004
+    }
+  ],
+  "visits": [
+    {
+      "advisorName": "Ana García",
+      "visitDate": "2025-08-01",
+      "centerName": "Colegio Juan de los Santos",
+      "contactName": "Ivette",
+      "contactNumber": "8092240076",
+      "comments": "Todo Bien",
+      "id": 1755227930703,
+      "recordedAt": "2025-08-15T03:18:50.703Z"
+    },
+    {
+      "advisorName": "Moises Gross",
+      "visitDate": "2025-08-01",
+      "centerName": "Colegio Perpetuo Socorro",
+      "contactName": "Lidia Abreu",
+      "contactNumber": "8092240075",
+      "comments": "Entrega de Boletas",
+      "id": 1755228609701,
+      "recordedAt": "2025-08-15T03:30:09.701Z"
+    },
+    {
+      "advisorName": "Moises Gross",
+      "visitDate": "2025-08-01",
+      "centerName": "San Miguel Arcangel",
+      "contactName": "Juan Perez",
+      "contactNumber": "8092240075",
+      "comments": "Visita de seguimiento",
+      "id": 1755229036210,
+      "recordedAt": "2025-08-15T03:37:16.210Z"
+    },
+    {
+      "advisorName": "Moises Gross",
+      "visitDate": "2025-08-01",
+      "centerName": "Colegio Perpetuo Socorro",
+      "contactName": "Lidia Abreu",
+      "contactNumber": "8092240075",
+      "comments": "VISITA SEGUIMIENTO",
+      "id": 1755253352058,
+      "recordedAt": "2025-08-15T10:22:32.058Z"
+    },
+    {
+      "advisorName": "Moises Gross",
+      "visitDate": "2025-08-01",
+      "centerName": "Colegio Perpetuo Socorro",
+      "zoneName": "SDE",
+      "contactName": "Lidia Abreu",
+      "contactNumber": "8092240075",
+      "comments": "Entrega de Propuesta",
+      "id": 1755256954466,
+      "recordedAt": "2025-08-15T11:22:34.466Z"
+    }
+  ],
+  "zones": [
+    {
+      "id": 1755253242711,
+      "name": "SDO"
+    },
+    {
+      "id": 1755253248710,
+      "name": "SDN"
+    },
+    {
+      "id": 1755253254078,
+      "name": "SDE"
+    },
+    {
+      "id": 1755253259939,
+      "name": "BOCA CHICA"
+    },
+    {
+      "id": 1755253264608,
+      "name": "HAINA"
+    },
+    {
+      "id": 1755253271728,
+      "name": "SAN CRISTOBAL"
+    },
+    {
+      "id": 1755253280094,
+      "name": "VILLA ALTAGRACIA"
+    }
+  ],
+  "predefinedComments": [
+    {
+      "id": 1755254088548,
+      "name": "Visita Inicial"
+    },
+    {
+      "id": 1755254098295,
+      "name": "Visita Seguimiento"
+    },
+    {
+      "id": 1755254106600,
+      "name": "Entrega de Propuesta"
+    },
+    {
+      "id": 1755254114140,
+      "name": "Exposicion de Propuesta"
+    },
+    {
+      "id": 1755254138869,
+      "name": "Reunion para validar prendas y proyectos"
+    },
+    {
+      "id": 1755254151088,
+      "name": "Reunion para Cierre de Venta"
+    },
+    {
+      "id": 1755254167690,
+      "name": "Objetivo no logrado"
+    },
+    {
+      "id": 1755254197123,
+      "name": "Retroalimentacion por el cliente"
+    }
+  ]
+}
