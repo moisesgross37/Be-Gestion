@@ -36,6 +36,10 @@ app.get('/tareas-menu', (req, res) => {
     res.sendFile(path.join(__dirname, 'tareas_menu.html'));
 });
 
+app.get('/reporte_filtros', (req, res) => {
+    res.sendFile(path.join(__dirname, 'reporte_filtros.html'));
+});
+
 // --- Funciones de Ayuda para la Base de Datos ---
 const readDB = () => {
   try {
