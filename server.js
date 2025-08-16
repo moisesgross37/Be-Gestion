@@ -15,6 +15,27 @@ app.get('/asesor', (req, res) => {
     res.sendFile(path.join(__dirname, 'asesor.html'));
 });
 
+// Rutas para las páginas de sub-menús
+app.get('/asesores-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'asesores_menu.html'));
+});
+
+app.get('/audiovisuales-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'audiovisuales_menu.html'));
+});
+
+app.get('/logistica-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'logistica_menu.html'));
+});
+
+app.get('/administrativo-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'administrativo_menu.html'));
+});
+
+app.get('/tareas-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'tareas_menu.html'));
+});
+
 // --- Funciones de Ayuda para la Base de Datos ---
 const readDB = () => {
   try {
