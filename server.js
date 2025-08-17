@@ -230,20 +230,6 @@ app.get('/api/report', (req, res) => {
     res.json(filteredVisits);
 });
 
-
-// --- Ruta de API para Reportes ---
-app.get('/api/report', (req, res) => {
-    const { advisor, startDate, endDate } = req.query;
-    const db = readDB();
-    let filteredVisits = db.visits;
-
-    if (advisor) filteredVisits = filteredVisits.filter(v => v.advisorName === advisor);
-    if (startDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) >= new Date(startDate));
-    if (endDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) <= new Date(endDate));
-
-    res.json(filteredVisits);
-});
-
 // --- Rutas de API para Solicitudes de Cotización ---
 
 app.get('/api/next-quote-number', (req, res) => {
