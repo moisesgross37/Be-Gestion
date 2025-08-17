@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const tableBody = document.getElementById('pending-quotes-table-body');
+    const pendingTableBody = document.getElementById('pending-quotes-table-body');
+    const finalizedTableBody = document.getElementById('finalized-quotes-table-body');
     const modal = document.getElementById('quote-details-modal');
     const closeModalButton = modal.querySelector('.close-button');
     const detailsContent = document.getElementById('quote-details-content');
@@ -8,35 +9,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const rejectButton = document.getElementById('reject-button');
     const modifyButton = document.getElementById('modify-button');
 
-    let currentQuotes = [];
+    let allQuotes = [];
     let selectedQuoteId = null;
 
-    /**
-     * Carga las cotizaciones pendientes desde la API y las muestra en la tabla.
-     */
-    const fetchPendingQuotes = async () => {
+    const fetchAllQuotes = async () => {
         try {
-            const response = await fetch('/api/quote-requests?status=Pendiente de Aprobación');
-            if (!response.ok) throw new Error('Error al cargar las cotizaciones pendientes.');
-            currentQuotes = await response.json();
-            renderQuotesTable(currentQuotes);
+            const response = await fetch('/api/quote-requests');
+            if (!response.ok) throw new Error('Error al cargar las cotizaciones.');
+            allQuotes = await response.json();
+            
+            const pendingQuotes = allQuotes.filter(q => q.status === 'Pendiente de Aprobación');
+            const finalizedQuotes = allQuotes.filter(q => q.status === 'Aprobada' || q.status === 'Rechazada');
+
+            renderPendingQuotesTable(pendingQuotes);
+            renderFinalizedQuotesTable(finalizedQuotes);
+
         } catch (error) {
             console.error(error);
-            tableBody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
+            pendingTableBody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
         }
     };
 
-    /**
-     * Renderiza las filas de la tabla de cotizaciones.
-     * @param {Array} quotes - El array de cotizaciones a mostrar.
-     */
-    const renderQuotesTable = (quotes) => {
-        tableBody.innerHTML = '';
+    const renderPendingQuotesTable = (quotes) => {
+        pendingTableBody.innerHTML = '';
         if (quotes.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6">No hay cotizaciones pendientes de aprobación.</td></tr>';
+            pendingTableBody.innerHTML = '<tr><td colspan="6">No hay cotizaciones pendientes de aprobación.</td></tr>';
             return;
         }
-
         quotes.forEach(quote => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -45,19 +44,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${quote.eventName || 'N/A'}</td>
                 <td>$${quote.calculatedPrices.montoTotalProyecto || '0.00'}</td>
                 <td>${new Date(quote.requestDate).toLocaleDateString()}</td>
-                <td><button class="btn btn-edit view-details-btn" data-id="${quote.id}">Ver Detalles</button></td>
+                <td><button class="btn btn-edit view-details-btn" data-id="${quote.id}">Revisar</button></td>
             `;
-            tableBody.appendChild(row);
+            pendingTableBody.appendChild(row);
         });
     };
 
-    /**
-     * Muestra el modal con los detalles de una cotización específica.
-     * @param {number} quoteId - El ID de la cotización a mostrar.
-     */
+    const renderFinalizedQuotesTable = (quotes) => {
+        finalizedTableBody.innerHTML = '';
+        if (quotes.length === 0) {
+            finalizedTableBody.innerHTML = '<tr><td colspan="5">No hay cotizaciones finalizadas.</td></tr>';
+            return;
+        }
+        quotes.forEach(quote => {
+            const row = document.createElement('tr');
+            let actionsHTML = '';
+            if (quote.status === 'Aprobada') {
+                actionsHTML = `<a href="/api/quote-requests/${quote.id}/pdf" class="btn" target="_blank">Descargar PDF</a>`;
+            } else { // Rechazada
+                actionsHTML = `<button class="btn btn-delete" disabled>Rechazada</button>`;
+            }
+
+            row.innerHTML = `
+                <td>${quote.quoteNumber || 'N/A'}</td>
+                <td>${quote.clientName || 'N/A'}</td>
+                <td>${quote.eventName || 'N/A'}</td>
+                <td><strong>${quote.status}</strong></td>
+                <td>${actionsHTML}</td>
+            `;
+            finalizedTableBody.appendChild(row);
+        });
+    };
+
     const showQuoteDetails = (quoteId) => {
         selectedQuoteId = quoteId;
-        const quote = currentQuotes.find(q => q.id === quoteId);
+        const quote = allQuotes.find(q => q.id === quoteId);
         if (!quote) return;
 
         let detailsHTML = `
@@ -80,47 +101,46 @@ document.addEventListener('DOMContentLoaded', () => {
             <ul>${quote.facilidadesAplicadas.length > 0 ? quote.facilidadesAplicadas.map(f => `<li>${f}</li>`).join('') : '<li>Ninguna</li>'}</ul>
         `;
         detailsContent.innerHTML = detailsHTML;
+        
+        // Mostrar/ocultar botones de acción según el estado
+        const actionButtonsContainer = document.getElementById('quote-actions');
+        if (quote.status === 'Pendiente de Aprobación') {
+            actionButtonsContainer.style.display = 'block';
+        } else {
+            actionButtonsContainer.style.display = 'none';
+        }
+
         modal.style.display = 'block';
     };
 
-    /**
-     * Maneja una acción de cambio de estado (Aprobar/Rechazar).
-     * @param {'approve' | 'reject'} action - La acción a realizar.
-     */
     const handleStatusChange = async (action) => {
         const isRejecting = action === 'reject';
         let body = {};
-
         if (isRejecting) {
             const reason = prompt('Por favor, introduce el motivo del rechazo:');
-            if (reason === null) return; // El usuario canceló el prompt
+            if (reason === null) return;
             body = { reason };
         }
-
         try {
             const response = await fetch(`/api/quote-requests/${selectedQuoteId}/${action}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || `Error al ${action} la cotización.`);
             }
-
             alert(`Cotización marcada como "${isRejecting ? 'Rechazada' : 'Aprobada'}" con éxito.`);
             modal.style.display = 'none';
-            fetchPendingQuotes(); // Recargar la lista
-
+            fetchAllQuotes();
         } catch (error) {
             console.error(error);
             alert(error.message);
         }
     };
 
-    // --- Event Listeners ---
-    tableBody.addEventListener('click', (event) => {
+    document.body.addEventListener('click', (event) => {
         if (event.target.classList.contains('view-details-btn')) {
             const quoteId = parseInt(event.target.dataset.id, 10);
             showQuoteDetails(quoteId);
@@ -138,6 +158,5 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('La funcionalidad de modificar una cotización se implementará en una fase futura.');
     });
 
-    // --- Inicialización ---
-    fetchPendingQuotes();
+    fetchAllQuotes();
 });

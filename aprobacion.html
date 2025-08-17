@@ -16,6 +16,7 @@
         </header>
 
         <main>
+            <!-- Tabla de Pendientes -->
             <h2>Cotizaciones Pendientes de Aprobación</h2>
             <table class="centers-table">
                 <thead>
@@ -32,6 +33,25 @@
                     <!-- Las cotizaciones pendientes se cargarán aquí -->
                 </tbody>
             </table>
+
+            <hr style="margin: 40px 0;">
+
+            <!-- Tabla de Finalizadas -->
+            <h2>Historial de Cotizaciones Finalizadas</h2>
+            <table class="centers-table">
+                <thead>
+                    <tr>
+                        <th># Cotización</th>
+                        <th>Cliente</th>
+                        <th>Evento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="finalized-quotes-table-body">
+                    <!-- Las cotizaciones aprobadas y rechazadas se cargarán aquí -->
+                </tbody>
+            </table>
         </main>
     </div>
 
@@ -44,7 +64,6 @@
             <div id="quote-actions" class="form-group">
                 <button id="approve-button" class="btn">Aprobar</button>
                 <button id="reject-button" class="btn btn-delete">Rechazar</button>
-                <!-- El botón de modificar podría llevar a una nueva página o expandir un formulario de edición -->
                 <button id="modify-button" class="btn btn-edit">Modificar</button> 
             </div>
         </div>
