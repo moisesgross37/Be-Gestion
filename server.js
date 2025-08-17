@@ -5,6 +5,8 @@ const PDFDocument = require('pdfkit'); // Importar PDFKit
 const { assembleQuote } = require('./pricingEngine.js');
 
 const app = express();
+app.use(express.json());
+app.use(express.static(__dirname));
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'db.json');
 
