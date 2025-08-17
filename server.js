@@ -56,11 +56,14 @@ const readDB = () => {
     if (!db.visits) db.visits = [];
     if (!db.zones) db.zones = [];
     if (!db.predefinedComments) db.predefinedComments = [];
+    if (!db.quoteRequests) db.quoteRequests = []; // New
+    if (!db.categories) db.categories = [];     // New
+    if (!db.facilities) db.facilities = [];     // New
     return db;
   } catch (error) {
     console.error('Error leyendo la base de datos:', error);
     // Si el archivo no existe o hay un error, retorna una estructura vacía
-    return { advisors: [], centers: [], visits: [], zones: [], predefinedComments: [] };
+    return { advisors: [], centers: [], visits: [], zones: [], predefinedComments: [], quoteRequests: [], categories: [], facilities: [] }; // Updated
   }
 };
 
@@ -225,6 +228,56 @@ app.get('/api/report', (req, res) => {
     if (endDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) <= new Date(endDate));
 
     res.json(filteredVisits);
+});
+
+
+// --- Ruta de API para Reportes ---
+app.get('/api/report', (req, res) => {
+    const { advisor, startDate, endDate } = req.query;
+    const db = readDB();
+    let filteredVisits = db.visits;
+
+    if (advisor) filteredVisits = filteredVisits.filter(v => v.advisorName === advisor);
+    if (startDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) >= new Date(startDate));
+    if (endDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) <= new Date(endDate));
+
+    res.json(filteredVisits);
+});
+
+// --- Rutas de API para Solicitudes de Cotización ---
+
+app.get('/api/next-quote-number', (req, res) => {
+    const db = readDB();
+    const lastQuoteNumber = db.quoteRequests.length > 0
+        ? db.quoteRequests[db.quoteRequests.length - 1].quoteNumber
+        : 'COT00'; // Start with COT00 if no quotes exist
+
+    const num = parseInt(lastQuoteNumber.replace('COT', ''), 10) + 1;
+    const nextQuoteNumber = 'COT' + String(num).padStart(2, '0'); // COT01, COT02, etc.
+    res.json({ nextQuoteNumber });
+});
+
+app.post('/api/quote-requests', (req, res) => {
+    const db = readDB();
+    const newQuoteRequest = req.body;
+
+    newQuoteRequest.id = Date.now();
+    newQuoteRequest.requestDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    db.quoteRequests.push(newQuoteRequest);
+    writeDB(db);
+    res.status(201).json({ message: 'Solicitud de cotización registrada con éxito', quoteRequest: newQuoteRequest });
+});
+
+// --- Rutas de API para Categorías ---
+app.get('/api/categories', (req, res) => {
+    const db = readDB();
+    res.json(db.categories);
+});
+
+// --- Rutas de API para Facilidades ---
+app.get('/api/facilities', (req, res) => {
+    const db = readDB();
+    res.json(db.facilities);
 });
 
 

@@ -177,5 +177,40 @@
       "id": 1755254197123,
       "name": "Retroalimentacion por el cliente"
     }
+  ],
+  "quoteRequests": [],
+  "categories": [
+    {
+      "id": "combos_promocionales",
+      "name": "Combos Promocionales",
+      "options": [
+        {"id": "combo_opcion_a", "name": "Opción de Combo A"},
+        {"id": "combo_opcion_b", "name": "Opción de Combo B"},
+        {"id": "combo_opcion_c", "name": "Opción de Combo C"}
+      ]
+    },
+    {
+      "id": "lanzamientos",
+      "name": "Lanzamientos",
+      "options": [
+        {"id": "lanzamiento_tipo_1", "name": "Tipo de Lanzamiento 1"},
+        {"id": "lanzamiento_tipo_2", "name": "Tipo de Lanzamiento 2"},
+        {"id": "lanzamiento_tipo_3", "name": "Tipo de Lanzamiento 3"}
+      ]
+    },
+    {
+      "id": "graduacion",
+      "name": "Graduación",
+      "options": [
+        {"id": "grad_opcion_a", "name": "Opción de Graduación A"},
+        {"id": "grad_opcion_b", "name": "Opción de Graduación B"}
+      ]
+    }
+  ],
+  "facilities": [
+    {"id": "fac_transporte", "name": "Transporte"},
+    {"id": "fac_catering", "name": "Catering"},
+    {"id": "fac_fotografia", "name": "Fotografía"},
+    {"id": "fac_musica", "name": "Música/DJ"}
   ]
 }

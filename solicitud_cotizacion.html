@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Cotización</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="admin_estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Solicitud de Cotización</h1>
+            <p>Completa el formulario para solicitar una nueva cotización.</p>
+        </header>
+
+        <form id="quote-request-form">
+            <div class="form-group">
+                <label for="quote-number">Número de Cotización:</label>
+                <input type="text" id="quote-number" name="quoteNumber" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="request-date">Fecha de Solicitud:</label>
+                <input type="date" id="request-date" name="requestDate" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="advisor-name">Asesor:</label>
+                <select id="advisor-name" name="advisorName" required>
+                    <option value="">Selecciona tu nombre...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="center-name">Nombre del Centro:</label>
+                <select id="center-name" name="centerName" required>
+                    <option value="">Selecciona un centro...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Categoría:</label>
+                <div id="categories-container">
+                    <!-- Categorías y sus sub-opciones se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="student-quantity">Cantidad de Estudiantes:</label>
+                <input type="number" id="student-quantity" name="studentQuantity" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Facilidades Extras:</label>
+                <div id="facilities-container">
+                    <!-- Facilidades extras se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Crear Cotización</button>
+        </form>
+
+        <p id="success-message" class="hidden">¡Solicitud de cotización registrada con éxito!</p>
+
+        <footer>
+            <a href="/" class="back-button">Volver al Menú Principal</a>
+        </footer>
+    </div>
+
+    <script src="solicitud_cotizacion.js"></script>
+</body>
+</html>
