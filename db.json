@@ -212,5 +212,9 @@
     {"id": "fac_catering", "name": "Catering"},
     {"id": "fac_fotografia", "name": "Fotografía"},
     {"id": "fac_musica", "name": "Música/DJ"}
-  ]
+  ],
+  "products": [],
+  "venues": [],
+  "marginRules": [],
+  "gratuityRules": []
 }

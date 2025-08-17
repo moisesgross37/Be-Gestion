@@ -76,6 +76,86 @@
                     </table>
                 </div>
             </div>
+            
+            <!-- Nuevas secciones para Cotización Dinámica (Versión 2.0) -->
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Productos</button>
+                <div class="accordion-content">
+                    <form id="add-product-form" class="form-group">
+                        <label for="product-name">Nombre del Producto:</label>
+                        <input type="text" id="product-name" name="name" required placeholder="Ej: Polo Bordado">
+                        
+                        <label for="product-type">Tipo de Producto:</label>
+                        <select id="product-type" name="product_type" required>
+                            <option value="" disabled selected>Selecciona un tipo</option>
+                            <option value="Confeccion">Confeccion</option>
+                            <option value="Paquete_Graduacion">Paquete de Graduación</option>
+                            <option value="Servicio_Alquiler">Servicio de Alquiler</option>
+                            <option value="Servicio_Individual">Servicio Individual</option>
+                            <option value="Articulo_Gratuidad">Artículo de Gratuidad</option>
+                        </select>
+
+                        <!-- Campos para tipos basados en Costo + Margen -->
+                        <fieldset id="fieldset-costo-base">
+                            <legend>Cálculo por Costo + Margen</legend>
+                            <label for="product-costo-base">Costo Base (por unidad o total):</label>
+                            <input type="number" id="product-costo-base" name="costo_base" step="0.01" placeholder="0.00">
+                        </fieldset>
+
+                        <!-- Campos para Servicio Individual -->
+                        <fieldset id="fieldset-servicio-individual">
+                            <legend>Cálculo para Servicio Individual</legend>
+                            <label for="product-grupo-minimo">Grupo Mínimo:</label>
+                            <input type="number" id="product-grupo-minimo" name="grupo_minimo" placeholder="10">
+                            <label for="product-precio-base-grupo">Precio Base para Grupo:</label>
+                            <input type="number" id="product-precio-base-grupo" name="precio_venta_base_grupo" step="0.01" placeholder="0.00">
+                            <label for="product-precio-adicional">Precio por Persona Adicional:</label>
+                            <input type="number" id="product-precio-adicional" name="precio_venta_adicional" step="0.01" placeholder="0.00">
+                        </fieldset>
+
+                        <button type="submit" class="btn">Añadir Producto</button>
+                    </form>
+                    <hr>
+                    <h3>Productos Actuales</h3>
+                    <ul id="product-list" class="resource-list"></ul>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Reglas de Margen</button>
+                <div class="accordion-content">
+                    <form id="add-margin-rule-form" class="form-group">
+                        <label for="margin-rule-min-qty">Cantidad Mínima de Estudiantes:</label>
+                        <input type="number" id="margin-rule-min-qty" name="min_quantity" required placeholder="1">
+                        <label for="margin-rule-max-qty">Cantidad Máxima de Estudiantes:</label>
+                        <input type="number" id="margin-rule-max-qty" name="max_quantity" required placeholder="50">
+                        <label for="margin-rule-percentage">Porcentaje de Margen (%):</label>
+                        <input type="number" id="margin-rule-percentage" name="marginPercentage" step="0.01" required placeholder="30.00">
+                        <button type="submit" class="btn">Añadir Regla</button>
+                    </form>
+                    <hr>
+                    <h3>Reglas de Margen Actuales</h3>
+                    <ul id="margin-rule-list" class="resource-list"></ul>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">Gestionar Reglas de Gratuidad</button>
+                <div class="accordion-content">
+                    <form id="add-gratuity-rule-form" class="form-group">
+                        <label for="gratuity-rule-min-qty">Cantidad Mínima de Estudiantes:</label>
+                        <input type="number" id="gratuity-rule-min-qty" name="min_quantity" required placeholder="1">
+                        <label for="gratuity-rule-max-qty">Cantidad Máxima de Estudiantes:</label>
+                        <input type="number" id="gratuity-rule-max-qty" name="max_quantity" required placeholder="50">
+                        <label for="gratuity-rule-description">Descripción de la Gratuidad:</label>
+                        <input type="text" id="gratuity-rule-description" name="description" required placeholder="Ej: 1 Polo gratis por cada 10 estudiantes">
+                        <button type="submit" class="btn">Añadir Regla</button>
+                    </form>
+                    <hr>
+                    <h3>Reglas de Gratuidad Actuales</h3>
+                    <ul id="gratuity-rule-list" class="resource-list"></ul>
+                </div>
+            </div>
         </main>
 
         <footer>
