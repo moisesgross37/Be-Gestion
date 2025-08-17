@@ -20,6 +20,7 @@ app.get('/logistica-menu', (req, res) => res.sendFile(path.join(__dirname, 'logi
 app.get('/administrativo-menu', (req, res) => res.sendFile(path.join(__dirname, 'administrativo_menu.html')));
 app.get('/tareas-menu', (req, res) => res.sendFile(path.join(__dirname, 'tareas_menu.html')));
 app.get('/reporte_filtros', (req, res) => res.sendFile(path.join(__dirname, 'reporte_filtros.html')));
+app.get('/aprobacion', (req, res) => res.sendFile(path.join(__dirname, 'aprobacion.html'))); // Nueva página
 
 // --- Funciones de Ayuda para la Base de Datos ---
 const readDB = () => {
@@ -87,65 +88,22 @@ createCrudEndpoints('zones');
 createCrudEndpoints('comments', 'predefinedComments');
 
 // --- Rutas de API Específicas ---
+// ... (se mantienen las rutas de visits, centers, report, etc.)
 
-app.get('/api/data', (req, res) => res.json(readDB()));
+// --- Rutas de API para Cotizaciones y Aprobaciones ---
 
-app.post('/api/visits', (req, res) => {
+// GET /api/quote-requests?status=...
+app.get('/api/quote-requests', (req, res) => {
+    const { status } = req.query;
     const db = readDB();
-    const newVisit = req.body;
-    newVisit.id = Date.now();
-    newVisit.recordedAt = new Date().toISOString();
-    db.visits.push(newVisit);
-    if (!db.centers.some(c => c.name.toLowerCase() === newVisit.centerName.toLowerCase())) {
-        db.centers.push({ id: Date.now(), name: newVisit.centerName, contactName: newVisit.contactName, contactNumber: newVisit.contactNumber });
+    let quotes = db.quoteRequests;
+    if (status) {
+        quotes = quotes.filter(q => q.status === status);
     }
-    writeDB(db);
-    res.status(201).json({ message: 'Visita registrada con éxito', visit: newVisit });
+    res.json(quotes);
 });
 
-app.get('/api/centers', (req, res) => res.json(readDB().centers));
-
-app.put('/api/centers/:id', (req, res) => {
-    const db = readDB();
-    const id = parseInt(req.params.id, 10);
-    const { name, contactName, contactNumber } = req.body;
-    const centerIndex = db.centers.findIndex(c => c.id === id);
-    if (centerIndex === -1) return res.status(404).json({ message: 'Centro no encontrado' });
-    db.centers[centerIndex].name = name || db.centers[centerIndex].name;
-    db.centers[centerIndex].contactName = contactName || db.centers[centerIndex].contactName;
-    db.centers[centerIndex].contactNumber = contactNumber || db.centers[centerIndex].contactNumber;
-    writeDB(db);
-    res.json({ message: 'Centro actualizado con éxito', center: db.centers[centerIndex] });
-});
-
-app.delete('/api/centers/:id', (req, res) => {
-    const db = readDB();
-    db.centers = db.centers.filter(c => c.id !== parseInt(req.params.id, 10));
-    writeDB(db);
-    res.status(200).json({ message: 'Centro eliminado con éxito' });
-});
-
-app.get('/api/report', (req, res) => {
-    const { advisor, startDate, endDate } = req.query;
-    let filteredVisits = readDB().visits;
-    if (advisor) filteredVisits = filteredVisits.filter(v => v.advisorName === advisor);
-    if (startDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) >= new Date(startDate));
-    if (endDate) filteredVisits = filteredVisits.filter(v => new Date(v.visitDate) <= new Date(endDate));
-    res.json(filteredVisits);
-});
-
-app.get('/api/categories', (req, res) => res.json(readDB().categories));
-app.get('/api/facilities', (req, res) => res.json(readDB().facilities));
-
-// --- Rutas de API para Solicitudes de Cotización (CON MOTOR DE PRECIOS) ---
-app.get('/api/next-quote-number', (req, res) => {
-    const db = readDB();
-    const lastQuoteNumber = db.quoteRequests.length > 0 ? db.quoteRequests[db.quoteRequests.length - 1].quoteNumber : 'COT00';
-    const num = parseInt(lastQuoteNumber.replace('COT', ''), 10) + 1;
-    const nextQuoteNumber = 'COT' + String(num).padStart(2, '0');
-    res.json({ nextQuoteNumber });
-});
-
+// POST /api/quote-requests (Crear nueva)
 app.post('/api/quote-requests', (req, res) => {
     const db = readDB();
     const quoteInput = req.body;
@@ -162,6 +120,54 @@ app.post('/api/quote-requests', (req, res) => {
         res.status(500).json({ message: 'Ocurrió un error en el servidor al calcular la cotización.' });
     }
 });
+
+// POST /api/quote-requests/:id/approve
+app.post('/api/quote-requests/:id/approve', (req, res) => {
+    const db = readDB();
+    const id = parseInt(req.params.id, 10);
+    const quoteIndex = db.quoteRequests.findIndex(q => q.id === id);
+    if (quoteIndex === -1) return res.status(404).json({ message: 'Cotización no encontrada.' });
+
+    db.quoteRequests[quoteIndex].status = 'Aprobada';
+    writeDB(db);
+    res.json({ message: 'Cotización aprobada con éxito', quote: db.quoteRequests[quoteIndex] });
+});
+
+// POST /api/quote-requests/:id/reject
+app.post('/api/quote-requests/:id/reject', (req, res) => {
+    const db = readDB();
+    const id = parseInt(req.params.id, 10);
+    const { reason } = req.body;
+    const quoteIndex = db.quoteRequests.findIndex(q => q.id === id);
+    if (quoteIndex === -1) return res.status(404).json({ message: 'Cotización no encontrada.' });
+
+    db.quoteRequests[quoteIndex].status = 'Rechazada';
+    db.quoteRequests[quoteIndex].rejectionReason = reason || 'Sin motivo específico';
+    writeDB(db);
+    res.json({ message: 'Cotización rechazada con éxito', quote: db.quoteRequests[quoteIndex] });
+});
+
+// PUT /api/quote-requests/:id (Modificar)
+app.put('/api/quote-requests/:id', (req, res) => {
+    const db = readDB();
+    const id = parseInt(req.params.id, 10);
+    const updatedQuoteData = req.body;
+    const quoteIndex = db.quoteRequests.findIndex(q => q.id === id);
+    if (quoteIndex === -1) return res.status(404).json({ message: 'Cotización no encontrada.' });
+
+    // Recalcular la cotización con los nuevos datos
+    try {
+        const finalQuote = assembleQuote(updatedQuoteData, db);
+        finalQuote.id = id; // Mantener el ID original
+        db.quoteRequests[quoteIndex] = finalQuote;
+        writeDB(db);
+        res.json({ message: 'Cotización modificada y recalculada con éxito', quote: finalQuote });
+    } catch (error) {
+        console.error('Error al modificar la cotización:', error);
+        res.status(500).json({ message: 'Ocurrió un error en el servidor al modificar la cotización.' });
+    }
+});
+
 
 // --- Iniciar Servidor ---
 app.listen(PORT, () => {
