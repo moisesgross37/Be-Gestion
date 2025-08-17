@@ -3,12 +3,17 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'db.json');
 
 // Middleware
 app.use(express.json());
 app.use(express.static(__dirname)); // Servir archivos estáticos desde el directorio raíz
+
+// Ruta para la página principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Ruta para la página del asesor
 app.get('/asesor', (req, res) => {
