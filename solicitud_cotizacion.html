@@ -3,69 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitud de Cotización</title>
+    <title>Nueva Solicitud de Cotización</title>
     <link rel="stylesheet" href="estilos.css">
-    <link rel="stylesheet" href="admin_estilos.css">
+    <link rel="stylesheet" href="admin_estilos.css"> <!-- Reutilizamos algunos estilos -->
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Solicitud de Cotización</h1>
-            <p>Completa el formulario para solicitar una nueva cotización.</p>
+            <h1>Nueva Solicitud de Cotización Dinámica</h1>
+            <p>Complete los detalles para calcular una cotización precisa.</p>
+            <a href="/asesores-menu" class="back-button">&larr; Volver al Menú de Asesor</a>
         </header>
 
-        <form id="quote-request-form">
-            <div class="form-group">
-                <label for="quote-number">Número de Cotización:</label>
-                <input type="text" id="quote-number" name="quoteNumber" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="request-date">Fecha de Solicitud:</label>
-                <input type="date" id="request-date" name="requestDate" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="advisor-name">Asesor:</label>
-                <select id="advisor-name" name="advisorName" required>
-                    <option value="">Selecciona tu nombre...</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="center-name">Nombre del Centro:</label>
-                <select id="center-name" name="centerName" required>
-                    <option value="">Selecciona un centro...</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Categoría:</label>
-                <div id="categories-container">
-                    <!-- Categorías y sus sub-opciones se cargarán aquí dinámicamente -->
+        <form id="quote-form">
+            <!-- Sección 1: Datos Generales -->
+            <fieldset>
+                <legend>1. Datos Generales del Evento</legend>
+                <div class="form-group">
+                    <label for="quoteNumber">Número de Cotización:</label>
+                    <input type="text" id="quoteNumber" name="quoteNumber" readonly>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label for="student-quantity">Cantidad de Estudiantes:</label>
-                <input type="number" id="student-quantity" name="studentQuantity" min="1" required>
-            </div>
-
-            <div class="form-group">
-                <label>Facilidades Extras:</label>
-                <div id="facilities-container">
-                    <!-- Facilidades extras se cargarán aquí dinámicamente -->
+                <div class="form-group">
+                    <label for="clientName">Nombre del Cliente (Centro Educativo):</label>
+                    <input type="text" id="clientName" name="clientName" required placeholder="Ej: Colegio San José">
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="eventName">Nombre del Evento:</label>
+                    <input type="text" id="eventName" name="eventName" required placeholder="Ej: Graduación 4to de Secundaria 2025">
+                </div>
+                <div class="form-group">
+                    <label for="studentCount">Cantidad de Estudiantes Cotizados:</label>
+                    <input type="number" id="studentCount" name="studentCount" required min="1" placeholder="50">
+                </div>
+                <div class="form-group">
+                    <label for="desertionRate">Tasa de Deserción Estimada (%):</label>
+                    <input type="number" id="desertionRate" name="desertionRate" value="10" step="1" required placeholder="10">
+                </div>
+            </fieldset>
 
-            <button type="submit" class="btn">Crear Cotización</button>
+            <!-- Sección 2: Selección de Productos y Servicios -->
+            <fieldset>
+                <legend>2. Selección de Productos y Servicios</legend>
+                <div id="product-list-container" class="checkbox-grid">
+                    <!-- Los productos se cargarán aquí dinámicamente -->
+                    <p>Cargando productos...</p>
+                </div>
+            </fieldset>
+
+            <!-- Sección 3: Facilidades y Condiciones Especiales -->
+            <fieldset id="facilities-section" style="display: none;">
+                <legend>3. Facilidades y Condiciones Especiales</legend>
+                <p>Estas opciones aplican por haber seleccionado un Paquete de Graduación.</p>
+                <div id="gratuity-rules-container" class="checkbox-grid">
+                    <!-- Las reglas de gratuidad se cargarán aquí -->
+                </div>
+            </fieldset>
+
+            <!-- Botón de Envío -->
+            <div class="form-group">
+                <button type="submit" class="btn">Enviar para Aprobación</button>
+            </div>
         </form>
-
-        <p id="success-message" class="hidden">¡Solicitud de cotización registrada con éxito!</p>
-
-        <footer>
-            <a href="/" class="back-button">Volver al Menú Principal</a>
-        </footer>
     </div>
 
     <script src="solicitud_cotizacion.js"></script>

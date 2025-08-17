@@ -1,215 +1,142 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    const quoteRequestForm = document.getElementById('quote-request-form');
-    const quoteNumberInput = document.getElementById('quote-number');
-    const requestDateInput = document.getElementById('request-date');
-    const advisorNameSelect = document.getElementById('advisor-name');
-    const centerNameSelect = document.getElementById('center-name');
-    const categoriesContainer = document.getElementById('categories-container');
-    const facilitiesContainer = document.getElementById('facilities-container');
-    const studentQuantityInput = document.getElementById('student-quantity');
-    const successMessage = document.getElementById('success-message');
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('quote-form');
+    const quoteNumberInput = document.getElementById('quoteNumber');
+    const productListContainer = document.getElementById('product-list-container');
+    const facilitiesSection = document.getElementById('facilities-section');
 
-    // --- Funciones para cargar datos ---
+    let allProducts = []; // Almacenar todos los productos para referencia futura
 
-    const fetchAndPopulateAdvisors = async () => {
-        try {
-            const response = await fetch('/api/advisors');
-            const advisors = await response.json();
-            advisors.forEach(advisor => {
-                const option = document.createElement('option');
-                option.value = advisor.name;
-                option.textContent = advisor.name;
-                advisorNameSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Error al cargar asesores:', error);
-        }
-    };
-
-    const fetchAndPopulateCenters = async () => {
-        try {
-            const response = await fetch('/api/centers');
-            const centers = await response.json();
-            centers.forEach(center => {
-                const option = document.createElement('option');
-                option.value = center.name;
-                option.textContent = center.name;
-                centerNameSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Error al cargar centros:', error);
-        }
-    };
-
-    const fetchAndPopulateCategories = async () => {
-        try {
-            const response = await fetch('/api/categories');
-            const categories = await response.json();
-
-            categories.forEach(category => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.classList.add('category-item');
-
-                const categoryCheckbox = document.createElement('input');
-                categoryCheckbox.type = 'checkbox';
-                categoryCheckbox.id = `cat-${category.id}`;
-                categoryCheckbox.name = 'category';
-                categoryCheckbox.value = category.id;
-
-                const categoryLabel = document.createElement('label');
-                categoryLabel.htmlFor = `cat-${category.id}`;
-                categoryLabel.textContent = category.name;
-
-                categoryDiv.appendChild(categoryCheckbox);
-                categoryDiv.appendChild(categoryLabel);
-
-                const subOptionsDiv = document.createElement('div');
-                subOptionsDiv.id = `sub-options-${category.id}`;
-                subOptionsDiv.classList.add('sub-options-container', 'hidden');
-
-                if (category.options && category.options.length > 0) {
-                    category.options.forEach(option => {
-                        const subOptionCheckbox = document.createElement('input');
-                        subOptionCheckbox.type = 'checkbox';
-                        subOptionCheckbox.id = `sub-cat-${option.id}`;
-                        subOptionCheckbox.name = `sub-category-${category.id}`;
-                        subOptionCheckbox.value = option.id;
-
-                        const subOptionLabel = document.createElement('label');
-                        subOptionLabel.htmlFor = `sub-cat-${option.id}`;
-                        subOptionLabel.textContent = option.name;
-
-                        subOptionsDiv.appendChild(subOptionCheckbox);
-                        subOptionsDiv.appendChild(subOptionLabel);
-                        subOptionsDiv.appendChild(document.createElement('br'));
-                    });
-                }
-
-                categoryCheckbox.addEventListener('change', () => {
-                    if (categoryCheckbox.checked) {
-                        subOptionsDiv.classList.remove('hidden');
-                    } else {
-                        subOptionsDiv.classList.add('hidden');
-                        // Desmarcar todas las sub-opciones cuando la categoría principal se desmarca
-                        subOptionsDiv.querySelectorAll('input[type="checkbox"]').forEach(subCheckbox => {
-                            subCheckbox.checked = false;
-                        });
-                    }
-                });
-
-                categoriesContainer.appendChild(categoryDiv);
-                categoriesContainer.appendChild(subOptionsDiv);
-            });
-        } catch (error) {
-            console.error('Error al cargar categorías:', error);
-        }
-    };
-
-    const fetchAndPopulateFacilities = async () => {
-        try {
-            const response = await fetch('/api/facilities');
-            const facilities = await response.json();
-
-            facilities.forEach(facility => {
-                const facilityDiv = document.createElement('div');
-                const facilityCheckbox = document.createElement('input');
-                facilityCheckbox.type = 'checkbox';
-                facilityCheckbox.id = `fac-${facility.id}`;
-                facilityCheckbox.name = 'facilities';
-                facilityCheckbox.value = facility.id;
-
-                const facilityLabel = document.createElement('label');
-                facilityLabel.htmlFor = `fac-${facility.id}`;
-                facilityLabel.textContent = facility.name;
-
-                facilityDiv.appendChild(facilityCheckbox);
-                facilityDiv.appendChild(facilityLabel);
-                facilitiesContainer.appendChild(facilityDiv);
-            });
-        } catch (error) {
-            console.error('Error al cargar facilidades:', error);
-        }
-    };
-
+    /**
+     * Carga el próximo número de cotización y lo muestra en el campo correspondiente.
+     */
     const fetchNextQuoteNumber = async () => {
         try {
             const response = await fetch('/api/next-quote-number');
+            if (!response.ok) throw new Error('Error al obtener el número de cotización.');
             const data = await response.json();
             quoteNumberInput.value = data.nextQuoteNumber;
         } catch (error) {
-            console.error('Error al obtener número de cotización:', error);
+            console.error(error);
+            quoteNumberInput.value = 'Error';
         }
     };
 
-    // --- Inicialización del formulario ---
-    const initializeForm = async () => {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months start at 0!
-        const dd = String(today.getDate()).padStart(2, '0');
-        requestDateInput.value = `${yyyy}-${mm}-${dd}`;
+    /**
+     * Comprueba si entre los productos seleccionados hay un paquete de graduación.
+     * Si es así, muestra la sección de facilidades.
+     */
+    const checkPackageSelection = () => {
+        const selectedCheckboxes = productListContainer.querySelectorAll('input[type="checkbox"]:checked');
+        const selectedProductIds = Array.from(selectedCheckboxes).map(cb => cb.value);
 
-        await fetchNextQuoteNumber();
-        await fetchAndPopulateAdvisors();
-        await fetchAndPopulateCenters();
-        await fetchAndPopulateCategories();
-        await fetchAndPopulateFacilities();
+        const hasPackage = selectedProductIds.some(id => {
+            const product = allProducts.find(p => p.id.toString() === id);
+            return product && product.product_type === 'Paquete_Graduacion';
+        });
+
+        if (hasPackage) {
+            facilitiesSection.style.display = 'block';
+        } else {
+            facilitiesSection.style.display = 'none';
+        }
     };
 
-    // --- Manejo del envío del formulario ---
-    quoteRequestForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
+    /**
+     * Carga todos los productos desde la API y los renderiza como checkboxes.
+     */
+    const fetchAndRenderProducts = async () => {
+        try {
+            const response = await fetch('/api/products');
+            if (!response.ok) throw new Error('Error al cargar los productos.');
+            allProducts = await response.json();
 
-        const selectedCategories = [];
-        categoriesContainer.querySelectorAll('input[name="category"]:checked').forEach(checkbox => {
-            const categoryId = checkbox.value;
-            const subOptions = [];
-            categoriesContainer.querySelectorAll(`input[name="sub-category-${categoryId}"]:checked`).forEach(subCheckbox => {
-                subOptions.push(subCheckbox.value);
+            productListContainer.innerHTML = ''; // Limpiar el mensaje "Cargando..."
+
+            if (allProducts.length === 0) {
+                productListContainer.innerHTML = '<p>No hay productos disponibles. Por favor, añada productos en el Panel de Administración.</p>';
+                return;
+            }
+
+            allProducts.forEach(product => {
+                const div = document.createElement('div');
+                div.classList.add('checkbox-item');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `product-${product.id}`;
+                checkbox.name = 'productIds';
+                checkbox.value = product.id;
+                checkbox.addEventListener('change', checkPackageSelection);
+
+                const label = document.createElement('label');
+                label.htmlFor = `product-${product.id}`;
+                label.textContent = `${product.name} (Tipo: ${product.product_type})`;
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                productListContainer.appendChild(div);
             });
-            selectedCategories.push({ id: categoryId, subOptions: subOptions });
-        });
 
-        const selectedFacilities = [];
-        facilitiesContainer.querySelectorAll('input[name="facilities"]:checked').forEach(checkbox => {
-            selectedFacilities.push(checkbox.value);
-        });
+        } catch (error) {
+            console.error(error);
+            productListContainer.innerHTML = '<p>Error al cargar los productos. Intente recargar la página.</p>';
+        }
+    };
 
-        const quoteData = {
-            quoteNumber: quoteNumberInput.value,
-            requestDate: requestDateInput.value,
-            advisorName: advisorNameSelect.value,
-            centerName: centerNameSelect.value,
-            categories: selectedCategories,
-            studentQuantity: parseInt(studentQuantityInput.value, 10),
-            facilities: selectedFacilities
+    /**
+     * Maneja el envío del formulario.
+     */
+    const handleFormSubmit = async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        
+        const selectedProductIds = Array.from(formData.getAll('productIds'));
+
+        if (selectedProductIds.length === 0) {
+            alert('Por favor, seleccione al menos un producto.');
+            return;
+        }
+
+        const quoteInput = {
+            quoteNumber: formData.get('quoteNumber'),
+            clientName: formData.get('clientName'),
+            eventName: formData.get('eventName'),
+            studentCount: parseInt(formData.get('studentCount'), 10),
+            desertionRate: parseFloat(formData.get('desertionRate')),
+            productIds: selectedProductIds,
+            // Aquí se añadiría la lógica para recolectar las facilidades seleccionadas
         };
 
         try {
             const response = await fetch('/api/quote-requests', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(quoteData),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(quoteInput),
             });
 
-            if (response.ok) {
-                successMessage.classList.remove('hidden');
-                quoteRequestForm.reset();
-                // Re-initialize form for next request
-                await initializeForm();
-                setTimeout(() => successMessage.classList.add('hidden'), 3000);
-            } else {
+            if (!response.ok) {
                 const errorData = await response.json();
-                alert(`Error al registrar la solicitud: ${errorData.message || response.statusText}`);
+                throw new Error(errorData.message || 'Error en el servidor.');
             }
-        } catch (error) {
-            console.error('Error al enviar la solicitud:', error);
-            alert('Error de conexión al registrar la solicitud.');
-        }
-    });
 
-    // --- Cargar el formulario al inicio ---
-    initializeForm();
+            const result = await response.json();
+            alert(`¡Cotización registrada con éxito!\nPrecio Total: ${result.quote.calculatedPrices.montoTotalProyecto}\nPrecio por Estudiante: ${result.quote.calculatedPrices.precioFinalPorEstudiante}`);
+            form.reset();
+            checkPackageSelection(); // Ocultar sección de facilidades
+            await fetchNextQuoteNumber(); // Cargar el siguiente número
+
+        } catch (error) {
+            console.error('Error al enviar la cotización:', error);
+            alert(`No se pudo registrar la cotización: ${error.message}`);
+        }
+    };
+
+    // --- Inicialización ---
+    const init = () => {
+        fetchNextQuoteNumber();
+        fetchAndRenderProducts();
+        form.addEventListener('submit', handleFormSubmit);
+    };
+
+    init();
 });
