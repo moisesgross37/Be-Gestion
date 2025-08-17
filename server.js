@@ -94,6 +94,12 @@ app.get('/api/quote-requests/:id/pdf', (req, res) => {
 });
 
 // --- Iniciar Servidor ---
+// Catch-all route to serve index.html for any unhandled requests
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// --- Iniciar Servidor ---
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log('Abre http://localhost:3000 en tu navegador para usar la aplicación.');
