@@ -34,7 +34,7 @@
 
                     <div class="form-group" id="costo-base-group">
                         <label for="costoBase">Costo Base:</label>
-                        <input type="number" id="costoBase" name="costoBase" step="0.01" placeholder="Ej: 650.00">
+                        <input type="number" id="costoBase" name="costoBase" step="0.01" placeholder="Ej: 650.00" required>
                     </div>
 
                     <div class="form-group">
@@ -98,14 +98,14 @@
 
             const updateProductFormVisibility = () => {
                 const selectedType = productTypeSelect.value;
-                costoBaseGroup.style.display = 'block';
-                servicioIndividualFieldset.style.display = 'none';
-
+                
+                // El costo base es visible para todos menos para Servicio Individual
                 if (selectedType === 'Servicio_Individual') {
                     costoBaseGroup.style.display = 'none';
                     servicioIndividualFieldset.style.display = 'block';
-                } else if (selectedType === 'Articulo_Gratuidad') {
-                    costoBaseGroup.style.display = 'none';
+                } else {
+                    costoBaseGroup.style.display = 'block';
+                    servicioIndividualFieldset.style.display = 'none';
                 }
             };
 
@@ -215,9 +215,6 @@
                     if (value) { 
                         data[key] = value;
                     }
-                }
-                if (data.product_type === 'Articulo_Gratuidad') {
-                    data.costoBase = 0;
                 }
                 delete data.id; // No enviar el id en el cuerpo
                 saveData(data);
