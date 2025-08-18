@@ -10,6 +10,34 @@ app.use(express.static(__dirname));
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'db.json');
 
+// Helper functions to read/write from db.json
+const readDB = () => {
+    try {
+        const data = fs.readFileSync(DB_PATH, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading DB:', error);
+        return {
+            advisors: [],
+            zones: [],
+            comments: [],
+            quoteRequests: [],
+            centers: [],
+            products: [],
+            marginRules: [],
+            gratuityRules: []
+        }; // Return empty structure if file doesn't exist or is invalid
+    }
+};
+
+const writeDB = (data) => {
+    try {
+        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing DB:', error);
+    }
+};
+
 // ... (Middleware y resto de la configuración se mantienen igual)
 
 // --- Rutas de API para Cotizaciones y Aprobaciones ---
@@ -59,8 +87,8 @@ app.get('/api/quote-requests/:id/pdf', (req, res) => {
     // Resumen de Precios
     doc.fontSize(14).text('Resumen de Precios', { underline: true });
     doc.moveDown();
-    doc.fontSize(12).text(`Monto Total del Proyecto: $${quote.calculatedPrices.montoTotalProyecto}`);
-    doc.text(`Precio Final por Estudiante (con deserción): $${quote.calculatedPrices.precioFinalPorEstudiante}`);
+    doc.fontSize(12).text(`Monto Total del Proyecto: ${quote.calculatedPrices.montoTotalProyecto}`);
+    doc.text(`Precio Final por Estudiante (con deserción): ${quote.calculatedPrices.precioFinalPorEstudiante}`);
     doc.text(`Cantidad de Estudiantes para Facturar: ${quote.calculatedPrices.estudiantesFacturables}`);
     doc.moveDown();
 
@@ -91,6 +119,65 @@ app.get('/api/quote-requests/:id/pdf', (req, res) => {
 
     // Finalizar el PDF
     doc.end();
+});
+
+// Generic GET endpoint for simple resources
+app.get('/api/:resource', (req, res) => {
+    const db = readDB();
+    const resource = req.params.resource;
+    if (db[resource]) {
+        res.json(db[resource]);
+    } else {
+        res.status(404).json({ message: 'Resource not found' });
+    }
+});
+
+// Generic POST endpoint for simple resources
+app.post('/api/:resource', (req, res) => {
+    const db = readDB();
+    const resource = req.params.resource;
+    const newItem = { id: Date.now(), ...req.body };
+    if (db[resource]) {
+        db[resource].push(newItem);
+        writeDB(db);
+        res.status(201).json(newItem);
+    } else {
+        res.status(404).json({ message: 'Resource not found' });
+    }
+});
+
+// Generic DELETE endpoint for simple resources
+app.delete('/api/:resource/:id', (req, res) => {
+    const db = readDB();
+    const resource = req.params.resource;
+    const id = parseInt(req.params.id, 10);
+    if (db[resource]) {
+        const initialLength = db[resource].length;
+        db[resource] = db[resource].filter(item => item.id !== id);
+        if (db[resource].length < initialLength) {
+            writeDB(db);
+            res.status(204).send(); // No Content
+        } else {
+            res.status(404).json({ message: 'Item not found' });
+        }
+    } else {
+        res.status(404).json({ message: 'Resource not found' });
+    }
+});
+
+// Specific PUT endpoint for centers
+app.put('/api/centers/:id', (req, res) => {
+    const db = readDB();
+    const id = parseInt(req.params.id, 10);
+    const updatedCenter = req.body;
+    const index = db.centers.findIndex(c => c.id === id);
+    if (index !== -1) {
+        db.centers[index] = { ...db.centers[index], ...updatedCenter };
+        writeDB(db);
+        res.json(db.centers[index]);
+    } else {
+        res.status(404).json({ message: 'Center not found' });
+    }
 });
 
 // --- Iniciar Servidor ---
