@@ -1,5 +1,72 @@
 /* Estilos para la sección de administración */
 
+/* --- Estilos para Pestañas (Tabs) --- */
+.tabs-container {
+    width: 100%;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    font-size: 1em;
+    font-weight: 500;
+    color: #555;
+    border-bottom: 2px solid transparent;
+    transition: color 0.3s, border-bottom-color 0.3s;
+}
+
+.tab-button:hover {
+    color: #007bff;
+}
+
+.tab-button.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none; /* Ocultar todas las pestañas por defecto */
+}
+
+.tab-content.active {
+    display: block; /* Mostrar solo la pestaña activa */
+}
+
+/* --- Estilos para Tarjetas (Cards) --- */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+    margin-top: 0;
+    font-size: 1.5em;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    margin-top: 25px;
+    font-size: 1.2em;
+    color: #444;
+}
+
+
 .accordion-item {
     background-color: #f9f9f9;
     border: 1px solid #ddd;

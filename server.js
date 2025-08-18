@@ -180,7 +180,39 @@ app.put('/api/centers/:id', (req, res) => {
     }
 });
 
-// --- Iniciar Servidor ---
+// --- Rutas para el Panel de Administración ---
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_menu.html'));
+});
+app.get('/admin_menu.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_menu.html'));
+});
+
+app.get('/admin/asesores', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_asesores.html'));
+});
+
+app.get('/admin/zonas', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_zonas.html'));
+});
+
+app.get('/admin/centros', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_centros.html'));
+});
+
+app.get('/admin/productos', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_productos.html'));
+});
+
+app.get('/admin/margenes', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_margenes.html'));
+});
+
+app.get('/admin/gratuidades', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin_gratuidades.html'));
+});
+
+// --- Rutas de Menús Principales ---
 app.get('/asesores-menu', (req, res) => {
     res.sendFile(path.join(__dirname, 'asesores-menu.html'));
 });

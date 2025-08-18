@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Productos</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Añadir/Modificar Productos</h2>
+                <form id="add-product-form" class="form-group">
+                    <label for="product-name">Nombre del Producto:</label>
+                    <input type="text" id="product-name" name="name" required placeholder="Ej: Polo Bordado">
+                    
+                    <label for="product-type">Tipo de Producto:</label>
+                    <select id="product-type" name="product_type" required>
+                        <option value="" disabled selected>Selecciona un tipo</option>
+                        <option value="Confeccion">Confeccion</option>
+                        <option value="Paquete_Graduacion">Paquete de Graduación</option>
+                        <option value="Servicio_Alquiler">Servicio de Alquiler</option>
+                        <option value="Servicio_Individual">Servicio Individual</option>
+                        <option value="Articulo_Gratuidad">Artículo de Gratuidad</option>
+                    </select>
+
+                    <div class="form-group" id="costo-base-group">
+                        <label for="costoBase">Costo Base:</label>
+                        <input type="number" id="costoBase" name="costoBase" step="0.01" placeholder="Ej: 650.00">
+                    </div>
+
+                    <fieldset id="fieldset-servicio-individual" style="display: none;">
+                        <legend>Cálculo para Servicio Individual</legend>
+                        <div class="form-group">
+                            <label for="product-grupo-minimo">Grupo Mínimo:</label>
+                            <input type="number" id="product-grupo-minimo" name="grupo_minimo" placeholder="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="product-precio-base-grupo">Precio Base para Grupo:</label>
+                            <input type="number" id="product-precio-base-grupo" name="precio_venta_base_grupo" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="product-precio-adicional">Precio por Persona Adicional:</label>
+                            <input type="number" id="product-precio-adicional" name="precio_venta_adicional" step="0.01" placeholder="0.00">
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="btn">Añadir Producto</button>
+                </form>
+                <hr>
+                <h3>Productos Actuales</h3>
+                <ul id="product-list" class="resource-list"></ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Lógica para el formulario dinámico de Productos ---
+            const productTypeSelect = document.getElementById('product-type');
+            const costoBaseGroup = document.getElementById('costo-base-group');
+            const servicioIndividualFieldset = document.getElementById('fieldset-servicio-individual');
+
+            const updateProductForm = () => {
+                const selectedType = productTypeSelect.value;
+
+                // Ocultar todo por defecto
+                costoBaseGroup.style.display = 'none';
+                servicioIndividualFieldset.style.display = 'none';
+
+                if (['Confeccion', 'Paquete_Graduacion', 'Servicio_Alquiler', 'Articulo_Gratuidad'].includes(selectedType)) {
+                    costoBaseGroup.style.display = 'block';
+                } else if (selectedType === 'Servicio_Individual') {
+                    servicioIndividualFieldset.style.display = 'block';
+                }
+            };
+
+            productTypeSelect.addEventListener('change', updateProductForm);
+            updateProductForm(); // Estado inicial
+
+            // --- Lógica para gestionar el recurso ---
+            const form = document.getElementById('add-product-form');
+            const list = document.getElementById('product-list');
+            const API_URL = '/api/products';
+
+            const fetchAndDisplayItems = async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error('Error al obtener productos.');
+                    const items = await response.json();
+                    list.innerHTML = '';
+                    if (items.length === 0) {
+                        list.innerHTML = `<li>No hay productos registrados.</li>`;
+                        return;
+                    }
+                    items.forEach(item => {
+                        const listItem = document.createElement('li');
+                        const itemText = Object.entries(item)
+                            .filter(([key]) => key !== 'id')
+                            .map(([key, value]) => `<strong>${key.replace(/_/g, ' ')}:</strong> ${value}`)
+                            .join(', ');
+                        listItem.innerHTML = itemText;
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Eliminar';
+                        deleteButton.classList.add('btn-delete');
+                        deleteButton.addEventListener('click', () => deleteItem(item.id));
+                        listItem.appendChild(deleteButton);
+                        list.appendChild(listItem);
+                    });
+                } catch (error) {
+                    console.error(error);
+                    list.innerHTML = `<li>Error al cargar productos.</li>`;
+                }
+            };
+
+            const addItem = async (data) => {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('Error al añadir el producto.');
+                    form.reset();
+                    updateProductForm();
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo añadir el producto.');
+                }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) return;
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Error al eliminar el producto.');
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo eliminar el producto.');
+                }
+            };
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const data = {};
+                for(const [key, value] of formData.entries()) {
+                    if (value) { // Solo añadir si hay valor
+                        data[key] = value;
+                    }
+                }
+                addItem(data);
+            });
+
+            fetchAndDisplayItems();
+        });
+    </script>
+</body>
+</html>
