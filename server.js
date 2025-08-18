@@ -98,6 +98,14 @@ app.get('/asesores-menu', (req, res) => {
     res.sendFile(path.join(__dirname, 'asesores-menu.html'));
 });
 
+app.get('/logistica-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'logistica-menu.html'));
+});
+
+app.get('/administrativo-menu', (req, res) => {
+    res.sendFile(path.join(__dirname, 'administrativo-menu.html'));
+});
+
 // Catch-all route to serve index.html for any unhandled requests
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
