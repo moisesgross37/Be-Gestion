@@ -42,6 +42,27 @@ const writeDB = (data) => {
 
 // --- Rutas de API para Cotizaciones y Aprobaciones ---
 
+app.get('/api/next-quote-number', (req, res) => {
+    const db = readDB();
+    // Ordenar para asegurarse de que el último es realmente el último por ID o fecha
+    const lastQuote = db.quoteRequests.sort((a, b) => b.id - a.id)[0];
+    const lastNumber = lastQuote ? parseInt(lastQuote.quoteNumber.split('-')[1]) : 0;
+    const nextNumber = `COT-${(lastNumber + 1).toString().padStart(4, '0')}`;
+    res.json({ quoteNumber: nextNumber });
+});
+
+app.get('/api/centers/search', (req, res) => {
+    const db = readDB();
+    const searchTerm = (req.query.q || '').toLowerCase();
+    if (!searchTerm) {
+        return res.json([]);
+    }
+    const results = db.centers.filter(center => 
+        center.name.toLowerCase().includes(searchTerm)
+    );
+    res.json(results);
+});
+
 // ... (GET, POST, PUT, approve, reject se mantienen igual)
 
 // GET /api/quote-requests/:id/pdf (NUEVO ENDPOINT)

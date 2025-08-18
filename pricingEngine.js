@@ -4,6 +4,8 @@
  * Este módulo contiene toda la lógica de negocio para calcular cotizaciones dinámicas.
  */
 
+const TASA_DESERCION_FIJA = 0.10; // 10%
+
 // --- Funciones de Ayuda ---
 
 /**
@@ -32,18 +34,18 @@ const calculateProductPrice = (product, studentCount, marginRules) => {
         case 'Confeccion':
         case 'Paquete_Graduacion':
             // Devuelve el precio total para este producto (precio unitario * cantidad)
-            const unitPrice = parseFloat(product.costo_base) / (1 - margin);
+            const unitPrice = parseFloat(product.costoBase) / (1 - margin);
             return unitPrice * studentCount;
 
         case 'Servicio_Alquiler':
             // Devuelve el precio de venta total del servicio
-            return parseFloat(product.costo_base) / (1 - margin);
+            return parseFloat(product.costoBase) / (1 - margin);
 
         case 'Servicio_Individual':
             // Devuelve el precio total escalado
-            const basePrice = parseFloat(product.precio_venta_base_grupo);
-            const minGroup = parseInt(product.grupo_minimo, 10);
-            const additionalPrice = parseFloat(product.precio_venta_adicional);
+            const basePrice = parseFloat(product.precioBaseGrupo);
+            const minGroup = parseInt(product.grupoMinimo, 10);
+            const additionalPrice = parseFloat(product.precioAdicional);
             if (studentCount <= minGroup) {
                 return basePrice;
             }
@@ -59,12 +61,12 @@ const calculateProductPrice = (product, studentCount, marginRules) => {
 
 /**
  * Ensambla una cotización completa a partir de los datos de entrada.
- * @param {object} quoteInput - Datos del formulario (ej. { studentCount: 50, productIds: [1, 2, 3], desertionRate: 0.1 })
+ * @param {object} quoteInput - Datos del formulario (ej. { studentCount: 50, productIds: [1, 2, 3] })
  * @param {object} db - El objeto completo de la base de datos con todas las reglas.
  * @returns {object} La cotización completamente calculada.
  */
 const assembleQuote = (quoteInput, db) => {
-    const { studentCount, productIds, desertionRate } = quoteInput;
+    const { studentCount, productIds } = quoteInput;
     const { products, marginRules, gratuityRules } = db;
 
     // 1. Filtrar los productos seleccionados
@@ -76,9 +78,9 @@ const assembleQuote = (quoteInput, db) => {
         montoTotalDelProyecto += calculateProductPrice(product, studentCount, marginRules);
     });
 
-    // 3. Calcular el Precio Final por Estudiante (con deserción)
-    const estudiantesFacturables = Math.floor(studentCount * (1 - (parseFloat(desertionRate) / 100)));
-    const precioFinalPorEstudiante = montoTotalDelProyecto / estudiantesFacturables;
+    // 3. Calcular el Precio Final por Estudiante (con deserción FIJA)
+    const estudiantesFacturables = Math.floor(studentCount * (1 - TASA_DESERCION_FIJA));
+    const precioFinalPorEstudiante = montoTotalDelProyecto > 0 && estudiantesFacturables > 0 ? montoTotalDelProyecto / estudiantesFacturables : 0;
 
     // 4. Determinar y aplicar facilidades
     const facilidadesAplicadas = [];
@@ -108,7 +110,7 @@ const assembleQuote = (quoteInput, db) => {
             precioFinalPorEstudiante: precioFinalPorEstudiante.toFixed(2),
             estudiantesFacturables: estudiantesFacturables
         },
-        items: selectedProducts.map(p => ({ id: p.id, name: p.name, type: p.product_type })),
+        items: selectedProducts.map(p => ({ id: p.id, name: p.name, type: p.product_type, details: p.detallesIncluidos })),
         facilidadesAplicadas,
         status: 'Pendiente de Aprobación'
     };
