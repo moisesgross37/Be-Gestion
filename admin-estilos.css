@@ -67,6 +67,43 @@
 }
 
 
+/* --- Estilos para Tablas de Gestión --- */
+.tabla-gestion {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.tabla-gestion th, .tabla-gestion td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.tabla-gestion th {
+    background-color: #f2f2f2;
+    font-weight: 600;
+}
+
+.tabla-gestion tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.tabla-gestion .btn-edit {
+    margin-right: 5px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tabla-gestion .btn-edit:hover {
+    background-color: #2980b9;
+}
+
+
 .accordion-item {
     background-color: #f9f9f9;
     border: 1px solid #ddd;

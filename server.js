@@ -165,6 +165,30 @@ app.delete('/api/:resource/:id', (req, res) => {
     }
 });
 
+// Generic PUT endpoint for simple resources
+app.put('/api/:resource/:id', (req, res) => {
+    const db = readDB();
+    const resource = req.params.resource;
+    const id = parseInt(req.params.id, 10);
+    const updatedData = req.body;
+
+    if (!db[resource]) {
+        return res.status(404).json({ message: 'Resource not found' });
+    }
+
+    const index = db[resource].findIndex(item => item.id === id);
+
+    if (index !== -1) {
+        // Preserve the original ID, but update the rest of the data
+        db[resource][index] = { ...db[resource][index], ...updatedData, id: id };
+        writeDB(db);
+        res.json(db[resource][index]);
+    } else {
+        res.status(404).json({ message: 'Item not found' });
+    }
+});
+
+
 // Specific PUT endpoint for centers
 app.put('/api/centers/:id', (req, res) => {
     const db = readDB();
