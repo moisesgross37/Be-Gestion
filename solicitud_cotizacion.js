@@ -2,13 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const quoteForm = document.getElementById('quote-form');
     const quoteNumberInput = document.getElementById('quoteNumber');
     const clientNameInput = document.getElementById('clientName');
+    const clientIdInput = document.getElementById('clientId');
+    const advisorNameSelect = document.getElementById('asesor-a-cargo-select');
     const clientAutocompleteResults = document.getElementById('client-autocomplete-results');
-    const productListContainer = document.getElementById('product-list-container');
+    const productAccordionContainer = document.getElementById('contenedor-productos');
     const aporteInstitucionInput = document.getElementById('aporteInstitucion');
     const estudiantesCortesiaInput = document.getElementById('estudiantesCortesia');
     const calculatedGratuitiesDiv = document.getElementById('calculated-gratuities');
-    const giftOptionsContainer = document.getElementById('gift-options-container');
-    const giftOptionsRadios = document.getElementById('gift-options-radios');
     const studentCountInput = document.getElementById('studentCount');
     const summaryBillableStudents = document.getElementById('summary-billable-students');
     const summaryTotalAmount = document.getElementById('summary-total-amount');
@@ -16,24 +16,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const successMessage = document.getElementById('success-message');
 
     let allProducts = [];
-    let allVenues = [];
     let selectedProductIds = new Set();
-    let selectedVenueIds = new Set();
+    let selectedClientId = null;
+    let debounceTimer;
 
-    // --- 1. Cargar el Número de Cotización ---
-    const loadQuoteNumber = async () => {
+    // --- Carga de Datos Iniciales (Integrada) ---
+    const loadInitialData = async () => {
         try {
-            const response = await fetch('/api/next-quote-number');
-            if (!response.ok) throw new Error('Error al obtener el número de cotización.');
-            const data = await response.json();
-            quoteNumberInput.value = data.quoteNumber;
+            const [quoteResponse, dataResponse] = await Promise.all([
+                fetch('/api/next-quote-number'),
+                fetch('/api/data')
+            ]);
+
+            if (!quoteResponse.ok) throw new Error('Error al obtener el número de cotización.');
+            if (!dataResponse.ok) throw new Error('Error al obtener datos iniciales.');
+
+            const quoteData = await quoteResponse.json();
+            const initialData = await dataResponse.json();
+
+            // Cargar número de cotización
+            quoteNumberInput.value = quoteData.quoteNumber;
+
+            // Cargar asesores
+            if (advisorNameSelect) {
+                advisorNameSelect.innerHTML = '<option value="">Seleccione un asesor...</option>';
+                initialData.advisors.forEach(advisor => {
+                    const option = document.createElement('option');
+                    option.value = advisor.name;
+                    option.textContent = advisor.name;
+                    advisorNameSelect.appendChild(option);
+                });
+            } else {
+                console.error('Elemento <select> con id "asesor-a-cargo-select" no encontrado.');
+            }
+
+            // Cargar productos
+            allProducts = initialData.products || [];
+            renderProductAccordion();
+
         } catch (error) {
-            console.error('Error cargando número de cotización:', error);
-            quoteNumberInput.value = 'Error';
+            console.error('Error cargando datos iniciales:', error);
         }
     };
 
-    // --- 2. Autocompletado para Nombre del Cliente ---
+    // --- Autocompletado para Nombre del Cliente ---
     const searchClients = async (query) => {
         if (query.length < 2) {
             clientAutocompleteResults.innerHTML = '';
@@ -56,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.dataset.id = center.id; 
                 div.addEventListener('click', () => {
                     clientNameInput.value = center.name;
+                    clientIdInput.value = center.id;
+                    selectedClientId = center.id;
                     clientAutocompleteResults.innerHTML = '';
                 });
                 clientAutocompleteResults.appendChild(div);
@@ -67,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     clientNameInput.addEventListener('input', (e) => {
+        selectedClientId = null;
+        clientIdInput.value = '';
         searchClients(e.target.value);
     });
 
@@ -76,223 +106,164 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 3. Cargar y Mostrar Productos y Salones ---
-    const loadProductsAndVenues = async () => {
-        try {
-            const [productsResponse, venuesResponse] = await Promise.all([
-                fetch('/api/products'),
-                fetch('/api/venues')
-            ]);
+    // --- Cargar y Mostrar Productos en Acordeón ---
+    const renderProductAccordion = () => {
+        productAccordionContainer.innerHTML = '';
 
-            if (!productsResponse.ok) throw new Error('Error al obtener productos.');
-            if (!venuesResponse.ok) throw new Error('Error al obtener salones.');
-
-            allProducts = await productsResponse.json();
-            allVenues = await venuesResponse.json();
-
-            renderProductAndVenueSelection();
-
-        } catch (error) {
-            console.error('Error cargando productos y salones:', error);
-            productListContainer.innerHTML = '<p>Error al cargar productos y salones.</p>';
-        }
-    };
-
-    const renderProductAndVenueSelection = () => {
-        productListContainer.innerHTML = '';
-
-        // Agrupar productos por tipo
-        const productsByCategory = allProducts.reduce((acc, product) => {
-            const category = product.product_type || 'Otros';
-            if (!acc[category]) {
-                acc[category] = [];
-            }
-            acc[category].push(product);
+        const productsByReglon = allProducts.reduce((acc, product) => {
+            const reglon = product.reglon || 'Otros';
+            if (!acc[reglon]) acc[reglon] = [];
+            acc[reglon].push(product);
             return acc;
         }, {});
 
-        const categoryOrder = {
-            'Paquete_Graduacion': 'Paquetes de Graduación',
-            'Confeccion': 'Ropa y Artículos Individuales',
-            'Servicio_Alquiler': 'Servicios y Amenidades Extras',
-            'Servicio_Individual': 'Servicios y Amenidades Extras',
-            'Articulo_Gratuidad': 'Artículos de Gratuidad', // Aunque no se seleccionan, pueden listarse
-            'Otros': 'Otros Productos'
-        };
+        Object.keys(productsByReglon).forEach((reglon, index) => {
+            const details = document.createElement('details');
+            if (index === 0) details.open = true;
 
-        // Renderizar productos
-        for (const key in categoryOrder) {
-            const categoryName = categoryOrder[key];
-            const productsInThisCategory = productsByCategory[key];
+            const summary = document.createElement('summary');
+            summary.textContent = reglon;
+            details.appendChild(summary);
 
-            if (productsInThisCategory && productsInThisCategory.length > 0) {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.classList.add('product-category');
-                categoryDiv.innerHTML = `<h3>${categoryName}</h3>`;
+            const accordionContent = document.createElement('div');
+            accordionContent.classList.add('accordion-content');
 
-                productsInThisCategory.forEach(product => {
+            const productsInReglon = productsByReglon[reglon];
+            const productsBySubReglon = productsInReglon.reduce((acc, product) => {
+                const subReglon = product.sub_reglon || 'General';
+                if (!acc[subReglon]) acc[subReglon] = [];
+                acc[subReglon].push(product);
+                return acc;
+            }, {});
+
+            for (const subReglon in productsBySubReglon) {
+                const subReglonGroup = document.createElement('div');
+                subReglonGroup.classList.add('sub-reglon-group');
+                subReglonGroup.innerHTML = `<h4>${subReglon}</h4>`;
+
+                productsBySubReglon[subReglon].forEach(product => {
                     const label = document.createElement('label');
                     label.classList.add('product-item');
                     label.innerHTML = `
-                        <input type="checkbox" name="selectedProducts" value="${product.id}" data-type="${product.product_type}"> 
-                        ${product.name} 
-                        ${product.costoBase !== undefined ? `(Costo Base: $${product.costoBase})` : ''}
+                        <input type="checkbox" name="selectedProducts" value="${product.id}">
+                        ${product.name || product.nombre || 'Producto sin nombre'}
                     `;
                     const checkbox = label.querySelector('input[type="checkbox"]');
                     checkbox.addEventListener('change', (e) => {
+                        const productId = parseInt(e.target.value, 10);
                         if (e.target.checked) {
-                            selectedProductIds.add(parseInt(e.target.value));
+                            selectedProductIds.add(productId);
                         } else {
-                            selectedProductIds.delete(parseInt(e.target.value));
+                            selectedProductIds.delete(productId);
                         }
-                        updateSummary();
-                        updateGratuitiesAndGifts();
+                        triggerSummaryUpdate();
                     });
-                    categoryDiv.appendChild(label);
+                    subReglonGroup.appendChild(label);
                 });
-                productListContainer.appendChild(categoryDiv);
+                accordionContent.appendChild(subReglonGroup);
             }
-        }
-
-        // Renderizar salones
-        if (allVenues.length > 0) {
-            const venuesDiv = document.createElement('div');
-            venuesDiv.classList.add('product-category');
-            venuesDiv.innerHTML = `<h3>Salones para Eventos</h3>`;
-            allVenues.forEach(venue => {
-                const label = document.createElement('label');
-                label.classList.add('product-item');
-                label.innerHTML = `
-                    <input type="checkbox" name="selectedVenues" value="${venue.id}"> 
-                    ${venue.name}
-                `;
-                const checkbox = label.querySelector('input[type="checkbox"]');
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        selectedVenueIds.add(parseInt(e.target.value));
-                    } else {
-                        selectedVenueIds.delete(parseInt(e.target.value));
-                    }
-                    updateSummary();
-                });
-                venuesDiv.appendChild(label);
-            });
-            productListContainer.appendChild(venuesDiv);
-        }
-        updateSummary(); // Actualizar resumen inicial
+            details.appendChild(accordionContent);
+            productAccordionContainer.appendChild(details);
+        });
     };
 
-    // --- 4. Lógica de Facilidades y Resumen en Tiempo Real ---
-    const TASA_DESERCION_FIJA = 0.10; // Definida en pricingEngine.js
-
-    const calculateQuoteEstimates = () => {
-        const studentCount = parseInt(studentCountInput.value) || 0;
+    // --- Lógica de Resumen en Tiempo Real ---
+    const actualizarResumen = async () => {
+        const studentCount = parseInt(studentCountInput.value, 10) || 0;
         const aporteInstitucion = parseFloat(aporteInstitucionInput.value) || 0;
-        const estudiantesCortesia = parseInt(estudiantesCortesiaInput.value) || 0;
+        const estudiantesCortesia = parseInt(estudiantesCortesiaInput.value, 10) || 0;
+        const productIds = Array.from(selectedProductIds);
 
-        let estimatedTotalProjectAmount = 0;
-        const selectedProductsData = allProducts.filter(p => selectedProductIds.has(p.id));
-        const selectedVenuesData = allVenues.filter(v => selectedVenueIds.has(v.id));
-
-        // Sumar costos de productos
-        selectedProductsData.forEach(product => {
-            // Simplificado: solo sumar costoBase para estimación rápida
-            // La lógica completa de precios está en el backend (pricingEngine)
-            if (product.costoBase !== undefined) {
-                estimatedTotalProjectAmount += parseFloat(product.costoBase);
-            } else if (product.precioBaseGrupo) { // Para Servicio_Individual
-                estimatedTotalProjectAmount += parseFloat(product.precioBaseGrupo);
-            }
-        });
-
-        // Sumar costos de salones (asumiendo que tienen un costoBase)
-        selectedVenuesData.forEach(venue => {
-            if (venue.costoBase !== undefined) {
-                estimatedTotalProjectAmount += parseFloat(venue.costoBase);
-            }
-        });
-
-        // Aplicar aporte a la institución (resta del total)
-        estimatedTotalProjectAmount -= aporteInstitucion;
-
-        // Calcular estudiantes facturables
-        const billableStudents = Math.floor(studentCount * (1 - TASA_DESERCION_FIJA)) - estudiantesCortesia;
-        
-        const estimatedPricePerStudent = billableStudents > 0 ? estimatedTotalProjectAmount / billableStudents : 0;
-
-        return {
-            billableStudents: Math.max(0, billableStudents),
-            estimatedTotalAmount: estimatedTotalProjectAmount,
-            estimatedPricePerStudent: estimatedPricePerStudent
+        console.log('Inside actualizarResumen:');
+        console.log('studentCount:', studentCount);
+        console.log('productIds.length:', productIds.length);
+    
+        const quoteEstimateInput = {
+            studentCount,
+            productIds,
+            aporteInstitucion,
+            estudiantesCortesia
         };
-    };
 
-    const updateSummary = () => {
-        const estimates = calculateQuoteEstimates();
-        summaryBillableStudents.textContent = estimates.billableStudents;
-        summaryTotalAmount.textContent = `$${estimates.estimatedTotalAmount.toFixed(2)}`;
-        summaryPricePerStudent.textContent = `$${estimates.estimatedPricePerStudent.toFixed(2)}`;
-    };
+        if (studentCount === 0 || productIds.length === 0) {
+            console.log('Condition met: studentCount is 0 or no products selected. Returning early.');
+            summaryBillableStudents.textContent = '0';
+            summaryTotalAmount.textContent = '$0.00';
+            summaryPricePerStudent.textContent = '$0.00';
+            calculatedGratuitiesDiv.innerHTML = '';
+            return;
+        }
 
-    const updateGratuitiesAndGifts = () => {
-        const studentCount = parseInt(studentCountInput.value) || 0;
-        const selectedProductsData = allProducts.filter(p => selectedProductIds.has(p.id));
-
-        let gratuitiesText = '';
-        giftOptionsRadios.innerHTML = '';
-        giftOptionsContainer.style.display = 'none';
-
-        // Lógica de gratuidades (simplificada para el frontend)
-        const hasCombo = selectedProductsData.some(p => p.product_type === 'Paquete_Graduacion');
-        const hasPolo = selectedProductsData.some(p => p.name.toLowerCase().includes('polo'));
-
-        // Simular regla de gratuidad por nivel (ej. si hay un combo y > X estudiantes)
-        if (hasCombo && studentCount >= 50) { // Ejemplo: 50 estudiantes para activar
-            gratuitiesText += 'Se activa gratuidad por nivel de combo. ';
-            // Aquí deberíamos obtener las opciones de regalo del backend o de db.json
-            // Por ahora, hardcodeamos opciones de ejemplo
-            const giftOptions = [
-                { id: 'gift1', name: 'Llavero Sublimado' },
-                { id: 'gift2', name: 'Botón Promocional' }
-            ];
-            giftOptionsContainer.style.display = 'block';
-            giftOptions.forEach(gift => {
-                const radio = document.createElement('input');
-                radio.type = 'radio';
-                radio.name = 'selectedGift';
-                radio.id = gift.id;
-                radio.value = gift.name;
-                const label = document.createElement('label');
-                label.htmlFor = gift.id;
-                label.textContent = gift.name;
-                giftOptionsRadios.appendChild(radio);
-                giftOptionsRadios.appendChild(label);
-                giftOptionsRadios.appendChild(document.createElement('br'));
+        try {
+            console.log('Attempting to fetch /api/quotes/calculate-estimate with payload:', quoteEstimateInput);
+            const response = await fetch('/api/quotes/calculate-estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(quoteEstimateInput),
             });
-        }
 
-        // Regla 1 por 10 para Polos
-        if (hasPolo && studentCount >= 10) {
-            const freePolos = Math.floor(studentCount / 10);
-            gratuitiesText += `${freePolos} Polo(s) de cortesía (Regla 1x10). `;
-        }
+            if (!response.ok) throw new Error('La respuesta del servidor no fue exitosa.');
 
-        calculatedGratuitiesDiv.textContent = gratuitiesText || 'Ninguna cortesía calculada automáticamente.';
+            const estimate = await response.json();
+
+            // La API ahora devuelve un array, tomamos la primera opción de precios.
+            if (estimate.calculatedPrices && estimate.calculatedPrices.length > 0) {
+                const prices = estimate.calculatedPrices[0];
+                summaryBillableStudents.textContent = prices.estudiantesFacturables;
+                summaryTotalAmount.textContent = `${parseFloat(prices.montoTotalProyecto).toFixed(2)}`;
+                summaryPricePerStudent.textContent = `${parseFloat(prices.precioFinalPorEstudiante).toFixed(2)}`;
+            } else {
+                // Manejar el caso donde no hay precios calculados
+                summaryBillableStudents.textContent = '0';
+                summaryTotalAmount.textContent = '0.00';
+                summaryPricePerStudent.textContent = '0.00';
+                console.warn('La respuesta de estimación no contenía opciones de precios.');
+            }
+
+            calculatedGratuitiesDiv.innerHTML = '';
+            if (estimate.facilidadesAplicadas && estimate.facilidadesAplicadas.length > 0) {
+                const ul = document.createElement('ul');
+                ul.style.margin = '0';
+                ul.style.paddingLeft = '20px';
+                estimate.facilidadesAplicadas.forEach(facility => {
+                    const li = document.createElement('li');
+                    li.textContent = facility;
+                    ul.appendChild(li);
+                });
+                calculatedGratuitiesDiv.appendChild(ul);
+            } else {
+                calculatedGratuitiesDiv.textContent = 'Ninguna cortesía calculada automáticamente.';
+            }
+        } catch (error) {
+            console.error('Error al obtener la estimación:', error);
+        }
     };
 
-    // Event Listeners para actualizar resumen y gratuidades
-    studentCountInput.addEventListener('input', () => { updateSummary(); updateGratuitiesAndGifts(); });
-    aporteInstitucionInput.addEventListener('input', updateSummary);
-    estudiantesCortesiaInput.addEventListener('input', updateSummary);
+    const triggerSummaryUpdate = () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(actualizarResumen, 500);
+    };
 
-    // --- 5. Manejar Envío del Formulario ---
+    studentCountInput.addEventListener('input', triggerSummaryUpdate);
+    aporteInstitucionInput.addEventListener('input', triggerSummaryUpdate);
+    estudiantesCortesiaInput.addEventListener('input', triggerSummaryUpdate);
+
+    // --- Manejar Envío del Formulario ---
     quoteForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         successMessage.classList.add('hidden'); 
 
-        if (selectedProductIds.size === 0 && selectedVenueIds.size === 0) {
+        if (advisorNameSelect.value === '') {
+            alert('Por favor, seleccione un asesor.');
+            return;
+        }
+        if (selectedProductIds.size === 0) {
             alert('Por favor, seleccione al menos un producto o salón.');
+            return;
+        }
+        if (!selectedClientId) {
+            alert('Error: Debe seleccionar un centro educativo de la lista. Si el centro es nuevo, por favor, regístrelo primero en el formulario de visitas.');
             return;
         }
 
@@ -300,13 +271,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const quoteData = {
             quoteNumber: quoteNumberInput.value,
             clientName: formData.get('clientName'),
+            clientId: selectedClientId,
             eventName: formData.get('eventName'),
+            advisorName: advisorNameSelect.value,
             studentCount: parseInt(formData.get('studentCount'), 10),
             productIds: Array.from(selectedProductIds),
-            venueIds: Array.from(selectedVenueIds),
             aporteInstitucion: parseFloat(formData.get('aporteInstitucion')) || 0,
-            estudiantesCortesia: parseInt(formData.get('estudiantesCortesia'), 10) || 0,
-            selectedGift: formData.get('selectedGift') || null, // Si hay opción de regalo
+            estudiantesCortesia: parseInt(formData.get('estudiantesCortesia'), 10) || 0
         };
 
         try {
@@ -325,13 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Cotización generada:', result);
             quoteForm.reset();
             selectedProductIds.clear();
-            selectedVenueIds.clear();
-            loadQuoteNumber(); 
-            loadProductsAndVenues(); // Recargar para resetear checkboxes
-            updateSummary(); // Resetear resumen
-            updateGratuitiesAndGifts(); // Resetear gratuidades
+            selectedClientId = null;
+            loadInitialData();
+            actualizarResumen();
             successMessage.classList.remove('hidden');
-            window.scrollTo(0, 0); 
+            window.scrollTo(0, 0);
 
         } catch (error) {
             console.error('Error al generar cotización:', error);
@@ -340,6 +309,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Carga inicial de datos
-    loadQuoteNumber();
-    loadProductsAndVenues();
+    loadInitialData();
 });

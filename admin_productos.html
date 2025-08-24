@@ -32,6 +32,19 @@
                         <option value="Articulo_Gratuidad">Artículo de Gratuidad</option>
                     </select>
 
+                    <label for="reglon">Reglón:</label>
+                    <input type="text" id="reglon" name="reglon" placeholder="Ej: PRENDAS PROMOCIONALES">
+
+                    <label for="sub_reglon">Sub-Reglón:</label>
+                    <input type="text" id="sub_reglon" name="sub_reglon" placeholder="Ej: Polos">
+
+                    <label for="tipo_calculo">Tipo de Cálculo:</label>
+                    <select id="tipo_calculo" name="tipo_calculo" required>
+                        <option value="por_estudiante" selected>Por Estudiante</option>
+                        <option value="total_grupo">Total Grupo</option>
+                        <option value="no_aplica">No Aplica</option>
+                    </select>
+
                     <div class="form-group" id="costo-base-group">
                         <label for="costoBase">Costo Base:</label>
                         <input type="number" id="costoBase" name="costoBase" step="0.01" placeholder="Ej: 650.00" required>
@@ -66,8 +79,11 @@
                 <table class="tabla-gestion">
                     <thead>
                         <tr>
-                            <th>Nombre del Producto</th>
+                            <th>Nombre</th>
                             <th>Tipo</th>
+                            <th>Reglón</th>
+                            <th>Sub-Reglón</th>
+                            <th>Tipo Cálculo</th>
                             <th>Costo Base</th>
                             <th>Acciones</th>
                         </tr>
@@ -89,17 +105,14 @@
             const tableBody = document.getElementById('lista-productos-body');
             const API_URL = '/api/products';
 
-            let editId = null; // Para rastrear si estamos en modo edición
+            let editId = null;
 
-            // --- Lógica para el formulario dinámico de Productos ---
             const productTypeSelect = document.getElementById('product-type');
             const costoBaseGroup = document.getElementById('costo-base-group');
             const servicioIndividualFieldset = document.getElementById('fieldset-servicio-individual');
 
             const updateProductFormVisibility = () => {
                 const selectedType = productTypeSelect.value;
-                
-                // El costo base es visible para todos menos para Servicio Individual
                 if (selectedType === 'Servicio_Individual') {
                     costoBaseGroup.style.display = 'none';
                     servicioIndividualFieldset.style.display = 'block';
@@ -110,8 +123,6 @@
             };
 
             productTypeSelect.addEventListener('change', updateProductFormVisibility);
-
-            // --- Lógica de CRUD ---
 
             const resetForm = () => {
                 form.reset();
@@ -129,7 +140,7 @@
                     const items = await response.json();
                     tableBody.innerHTML = '';
                     if (items.length === 0) {
-                        tableBody.innerHTML = `<tr><td colspan="4">No hay productos registrados.</td></tr>`;
+                        tableBody.innerHTML = `<tr><td colspan="7">No hay productos registrados.</td></tr>`;
                         return;
                     }
                     items.forEach(item => {
@@ -137,6 +148,9 @@
                         row.innerHTML = `
                             <td>${item.name || 'N/A'}</td>
                             <td>${item.product_type || 'N/A'}</td>
+                            <td>${item.reglon || 'N/A'}</td>
+                            <td>${item.sub_reglon || 'N/A'}</td>
+                            <td>${item.tipo_calculo || 'N/A'}</td>
                             <td>${item.costoBase !== undefined ? item.costoBase : 'N/A'}</td>
                             <td>
                                 <button class="btn-edit">Editar</button>
@@ -153,13 +167,19 @@
                             editId = item.id;
 
                             // Poblar el formulario
-                            for (const key in item) {
-                                const field = form.elements[key];
-                                if (field) {
-                                    field.value = item[key];
-                                }
-                            }
-                            updateProductFormVisibility(); // Actualizar visibilidad después de poblar
+                            document.getElementById('product-id').value = item.id;
+                            document.getElementById('product-name').value = item.name || '';
+                            document.getElementById('product-type').value = item.product_type || '';
+                            document.getElementById('reglon').value = item.reglon || '';
+                            document.getElementById('sub_reglon').value = item.sub_reglon || '';
+                            document.getElementById('tipo_calculo').value = item.tipo_calculo || 'por_estudiante';
+                            document.getElementById('costoBase').value = item.costoBase || '';
+                            document.getElementById('detallesIncluidos').value = item.detallesIncluidos || '';
+                            document.getElementById('precioBaseGrupo').value = item.precioBaseGrupo || '';
+                            document.getElementById('grupoMinimo').value = item.grupoMinimo || '';
+                            document.getElementById('precioAdicional').value = item.precioAdicional || '';
+                            
+                            updateProductFormVisibility();
                         });
 
                         const deleteButton = row.querySelector('.btn-delete');
@@ -169,7 +189,7 @@
                     });
                 } catch (error) {
                     console.error(error);
-                    tableBody.innerHTML = `<tr><td colspan="4">Error al cargar productos.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="7">Error al cargar productos.</td></tr>`;
                 }
             };
 
@@ -184,14 +204,17 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data),
                     });
-                    if (!response.ok) throw new Error(`Error al guardar el producto.`);
+                    if (!response.ok) {
+                         const errorData = await response.json();
+                         throw new Error(errorData.message || `Error al guardar el producto.`);
+                    }
                     
                     resetForm();
                     await fetchAndDisplayItems();
 
                 } catch (error) {
                     console.error(error);
-                    alert('No se pudo guardar el producto.');
+                    alert('No se pudo guardar el producto: ' + error.message);
                 }
             };
 
@@ -212,17 +235,23 @@
                 const formData = new FormData(form);
                 const data = {};
                 for(const [key, value] of formData.entries()) {
+                    // Solo incluir campos que tienen valor
                     if (value) { 
                         data[key] = value;
                     }
                 }
-                delete data.id; // No enviar el id en el cuerpo
+                // Asegurarse de que los campos numéricos se envíen como números
+                if(data.costoBase) data.costoBase = parseFloat(data.costoBase);
+                if(data.precioBaseGrupo) data.precioBaseGrupo = parseFloat(data.precioBaseGrupo);
+                if(data.grupoMinimo) data.grupoMinimo = parseInt(data.grupoMinimo, 10);
+                if(data.precioAdicional) data.precioAdicional = parseFloat(data.precioAdicional);
+
+                delete data.id;
                 saveData(data);
             });
 
             cancelEditButton.addEventListener('click', resetForm);
 
-            // Carga inicial
             updateProductFormVisibility();
             fetchAndDisplayItems();
         });

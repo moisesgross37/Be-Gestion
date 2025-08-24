@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const advisorSelect = document.getElementById('advisor-name');
+    console.log('Script app.js cargado correctamente.'); // Log para verificar la carga
+    const advisorSelect = document.getElementById('asesor-select');
     const centersDatalist = document.getElementById('centers-datalist');
     const centerInput = document.getElementById('center-name');
     const zoneSelect = document.getElementById('zone-name');
@@ -70,8 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         const formData = new FormData(form);
-        const visitData = Object.fromEntries(formData.entries());
+        const visitData = Object.fromEntries(formData.entries()); // Esto es correcto
 
+        // Enviar los datos al servidor para guardarlos
         fetch('/api/visits', {
             method: 'POST',
             headers: {
@@ -81,14 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Respuesta del servidor:', data);
+            console.log('Visita registrada:', data);
             successMessage.classList.remove('hidden');
             form.reset();
-
-            // Ocultar el mensaje después de 3 segundos
-            setTimeout(() => {
-                successMessage.classList.add('hidden');
-            }, 3000);
+            setTimeout(() => successMessage.classList.add('hidden'), 5000);
         })
         .catch(error => console.error('Error al registrar la visita:', error));
     });

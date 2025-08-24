@@ -33,17 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderPendingQuotesTable = (quotes) => {
         pendingTableBody.innerHTML = '';
         if (quotes.length === 0) {
-            pendingTableBody.innerHTML = '<tr><td colspan="6">No hay cotizaciones pendientes de aprobación.</td></tr>';
+            pendingTableBody.innerHTML = '<tr<td colspan="5">No hay cotizaciones pendientes de aprobación.</td></tr>';
             return;
         }
         quotes.forEach(quote => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${quote.quoteNumber || 'N/A'}</td>
-                <td>${quote.clientName || 'N/A'}</td>
-                <td>${quote.eventName || 'N/A'}</td>
-                <td>$${quote.calculatedPrices.montoTotalProyecto || '0.00'}</td>
                 <td>${new Date(quote.requestDate).toLocaleDateString()}</td>
+                <td>${quote.clientName || 'N/A'}</td>
+                <td>${quote.advisorName || 'No especificado'}</td>
                 <td><button class="btn btn-edit view-details-btn" data-id="${quote.id}">Revisar</button></td>
             `;
             pendingTableBody.appendChild(row);
@@ -143,7 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', (event) => {
         if (event.target.classList.contains('view-details-btn')) {
             const quoteId = parseInt(event.target.dataset.id, 10);
-            showQuoteDetails(quoteId);
+            console.log('Botón "Revisar" presionado. Redirigiendo a la página de revisión. ID de cotización:', quoteId);
+            window.location.href = `/revision_cotizacion.html?id=${quoteId}`;
         }
     });
 

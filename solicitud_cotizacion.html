@@ -13,7 +13,7 @@
             max-height: 150px;
             overflow-y: auto;
             position: absolute;
-            width: calc(100% - 2px); /* Ajustar al ancho del input */
+            width: calc(100% - 2px);
             background-color: #fff;
             z-index: 100;
         }
@@ -25,29 +25,51 @@
             background-color: #f1f1f1;
         }
         .form-group {
-            position: relative; /* Necesario para el posicionamiento absoluto de los resultados */
+            position: relative;
         }
-        /* Estilos para la lista de productos */
-        .product-category {
-            margin-bottom: 20px;
-        }
-        .product-category h3 {
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+
+        /* Estilos para el acordeón de productos */
+        #productos-por-reglon details {
+            border: 1px solid #ddd;
+            border-radius: 4px;
             margin-bottom: 10px;
+            background-color: #fff;
+        }
+        #productos-por-reglon summary {
+            font-weight: bold;
+            padding: 15px;
+            cursor: pointer;
+            background-color: #f7f7f7;
+            outline: none; /* Quita el borde al hacer clic en Chrome */
+        }
+        #productos-por-reglon details[open] summary {
+            border-bottom: 1px solid #ddd;
+        }
+        .accordion-content {
+            padding: 15px;
+        }
+        .sub-reglon-group h4 {
+            font-size: 1.1em;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .sub-reglon-group:first-child h4 {
+            margin-top: 0;
         }
         .product-item {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
         .product-item label {
-            display: inline-block;
-            margin-left: 5px;
             font-weight: normal;
+            cursor: pointer;
         }
         .product-item input[type="checkbox"] {
-            margin-right: 5px;
+            margin-right: 8px;
         }
+
         .summary-box {
             background-color: #e9f7ef;
             border: 1px solid #28a745;
@@ -84,11 +106,16 @@
                 <div class="form-group">
                     <label for="clientName">Nombre del Cliente (Centro Educativo):</label>
                     <input type="text" id="clientName" name="clientName" required autocomplete="off">
+                    <input type="hidden" id="clientId" name="clientId">
                     <div id="client-autocomplete-results" class="autocomplete-results"></div>
                 </div>
                 <div class="form-group">
                     <label for="eventName">Nombre del Evento:</label>
                     <input type="text" id="eventName" name="eventName" required placeholder="Ej: Graduación 2025">
+                </div>
+                <div class="form-group">
+                    <label for="asesor-a-cargo-select">Asesor a Cargo:</label>
+                    <select id="asesor-a-cargo-select"></select>
                 </div>
                 <div class="form-group">
                     <label for="studentCount">Cantidad de Estudiantes:</label>
@@ -98,8 +125,8 @@
 
             <div class="card">
                 <h2>2. Selección de Productos y Servicios</h2>
-                <div id="product-list-container">
-                    <p>Cargando productos y salones...</p>
+                <div id="contenedor-productos">
+                    <p>Cargando productos...</p>
                 </div>
             </div>
 
@@ -135,6 +162,6 @@
         <div id="success-message" class="hidden" style="margin-top: 20px;">¡Cotización creada con éxito!</div>
     </div>
 
-    <script src="solicitud_cotizacion.js"></script>
+        <script src="solicitud_cotizacion.js"></script>
 </body>
 </html>

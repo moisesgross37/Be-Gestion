@@ -1,123 +1,99 @@
-/**
- * pricingEngine.js
- * 
- * Este módulo contiene toda la lógica de negocio para calcular cotizaciones dinámicas.
- */
-
 const TASA_DESERCION_FIJA = 0.10; // 10%
 
-// --- Funciones de Ayuda ---
+function assembleQuote(quoteInput, db) {
+    console.log('--- INICIO DEL CÁLCULO EN PRICING ENGINE ---');
+    console.log('1. Datos recibidos del formulario:', quoteInput);
 
-/**
- * Encuentra la regla aplicable en un conjunto de reglas basado en la cantidad de estudiantes.
- * @param {Array} rules - El array de reglas (ej. marginRules, gratuityRules).
- * @param {number} studentCount - La cantidad de estudiantes en la cotización.
- * @returns {object|null} La regla que aplica, o null si no se encuentra ninguna.
- */
-const getApplicableRule = (rules, studentCount) => {
-    if (!rules) return null;
-    return rules.find(rule => studentCount >= rule.min_quantity && studentCount <= rule.max_quantity) || null;
-};
+    const {
+        studentCount,
+        productIds,
+        aporteInstitucion,
+        estudiantesCortesia
+    } = quoteInput;
+    const allProducts = db.products || [];
 
-/**
- * Calcula el precio de venta de un solo producto.
- * @param {object} product - El objeto del producto.
- * @param {number} studentCount - La cantidad de estudiantes.
- * @param {Array} marginRules - Todas las reglas de margen.
- * @returns {number} El precio de venta total para ese producto.
- */
-const calculateProductPrice = (product, studentCount, marginRules) => {
-    const applicableMarginRule = getApplicableRule(marginRules, studentCount);
-    const margin = applicableMarginRule ? (parseFloat(applicableMarginRule.marginPercentage) / 100) : 0;
-
-    switch (product.product_type) {
-        case 'Confeccion':
-        case 'Paquete_Graduacion':
-            // Devuelve el precio total para este producto (precio unitario * cantidad)
-            const unitPrice = parseFloat(product.costoBase) / (1 - margin);
-            return unitPrice * studentCount;
-
-        case 'Servicio_Alquiler':
-            // Devuelve el precio de venta total del servicio
-            return parseFloat(product.costoBase) / (1 - margin);
-
-        case 'Servicio_Individual':
-            // Devuelve el precio total escalado
-            const basePrice = parseFloat(product.precioBaseGrupo);
-            const minGroup = parseInt(product.grupoMinimo, 10);
-            const additionalPrice = parseFloat(product.precioAdicional);
-            if (studentCount <= minGroup) {
-                return basePrice;
-            }
-            return basePrice + ((studentCount - minGroup) * additionalPrice);
-
-        case 'Articulo_Gratuidad':
-        default:
-            return 0; // Los artículos de gratuidad no tienen costo en la cotización
-    }
-};
-
-// --- Función Principal ---
-
-/**
- * Ensambla una cotización completa a partir de los datos de entrada.
- * @param {object} quoteInput - Datos del formulario (ej. { studentCount: 50, productIds: [1, 2, 3] })
- * @param {object} db - El objeto completo de la base de datos con todas las reglas.
- * @returns {object} La cotización completamente calculada.
- */
-const assembleQuote = (quoteInput, db) => {
-    const { studentCount, productIds } = quoteInput;
-    const { products, marginRules, gratuityRules } = db;
-
-    // 1. Filtrar los productos seleccionados
-    const selectedProducts = products.filter(p => productIds.includes(p.id.toString()));
-
-    // 2. Calcular el Monto Total del Proyecto (sin deserción)
-    let montoTotalDelProyecto = 0;
-    selectedProducts.forEach(product => {
-        montoTotalDelProyecto += calculateProductPrice(product, studentCount, marginRules);
-    });
-
-    // 3. Calcular el Precio Final por Estudiante (con deserción FIJA)
-    const estudiantesFacturables = Math.floor(studentCount * (1 - TASA_DESERCION_FIJA));
-    const precioFinalPorEstudiante = montoTotalDelProyecto > 0 && estudiantesFacturables > 0 ? montoTotalDelProyecto / estudiantesFacturables : 0;
-
-    // 4. Determinar y aplicar facilidades
-    const facilidadesAplicadas = [];
-    const applicableGratuityRule = getApplicableRule(gratuityRules, studentCount);
-    const hasCombo = selectedProducts.some(p => p.product_type === 'Paquete_Graduacion');
-
-    if (hasCombo && applicableGratuityRule) {
-        facilidadesAplicadas.push(applicableGratuityRule.description);
-    }
-
-    // Regla especial "1 por 10" para Polos
-    const hasPolo = selectedProducts.some(p => p.name.toLowerCase().includes('polo'));
-    if (hasPolo) {
-        const freePolos = Math.floor(studentCount / 10);
-        if (freePolos > 0) {
-            facilidadesAplicadas.push(`${freePolos} Polo(s) de cortesía (Regla 1x10)`);
+    console.log(`2. Buscando ${productIds ? productIds.length : 0} productos en la base de datos...`);
+    const selectedProducts = (productIds || []).map(id => {
+        const product = allProducts.find(p => String(p.id) === String(id));
+        if (!product) {
+            console.log(`   - Producto con ID ${id} NO ENCONTRADO.`);
         }
+        return product;
+    }).filter(p => p);
+
+    console.log(`3. Se encontraron ${selectedProducts.length} productos completos.`);
+    if (selectedProducts.length === 0) {
+        console.log('   - No hay productos válidos, retornando cotización vacía.');
+        return {
+            ...quoteInput,
+            id: Date.now(),
+            createdAt: new Date().toISOString(),
+            status: 'Error en Creación',
+            itemsByReglon: {},
+            calculatedPrices: [],
+        };
     }
 
-    // 5. Construir el objeto de cotización final
+    const itemsByReglon = selectedProducts.reduce((acc, product) => {
+        const reglon = product.reglon || 'General';
+        if (!acc[reglon]) {
+            acc[reglon] = [];
+        }
+        acc[reglon].push({
+            id: product.id,
+            name: product.name,
+            details: product.detallesIncluidos || ''
+        });
+        return acc;
+    }, {});
+    console.log('4. Productos agrupados por sección (reglón).');
+
+
+    console.log('5. Calculando precios...');
+    let montoTotalProyecto = 0;
+    selectedProducts.forEach(product => {
+        const costo = parseFloat(product.costoBase) || 0;
+        montoTotalProyecto += costo * (studentCount || 0);
+    });
+    console.log(`   - Subtotal (Costo x Cantidad): ${montoTotalProyecto}`);
+
+    const margen = 0.30; // 30% fijo por ahora
+    montoTotalProyecto = montoTotalProyecto / (1 - margen);
+    console.log(`   - Total después de margen del ${margen * 100}%: ${montoTotalProyecto}`);
+
+    if (aporteInstitucion && studentCount) {
+         montoTotalProyecto += aporteInstitucion * studentCount;
+         console.log(`   - Total después de aporte de la institución: ${montoTotalProyecto}`);
+    }
+
+    const estudiantesFacturables = Math.max(0, Math.floor((studentCount || 0) * (1 - TASA_DESERCION_FIJA)) - (estudiantesCortesia || 0));
+    const precioFinalPorEstudiante = estudiantesFacturables > 0 ? montoTotalProyecto / estudiantesFacturables : 0;
+    console.log(`   - Estudiantes facturables (después de deserción y cortesías): ${estudiantesFacturables}`);
+    console.log(`   - Precio final por estudiante: ${precioFinalPorEstudiante.toFixed(2)}`);
+
+    const calculatedPrices = [{
+        venueName: 'Salón Principal', // Placeholder
+        montoTotalProyecto: montoTotalProyecto.toFixed(2),
+        precioFinalPorEstudiante: precioFinalPorEstudiante.toFixed(2),
+        estudiantesFacturables: estudiantesFacturables
+    }];
+    console.log('6. Opciones de precios calculadas.');
+
     const finalQuote = {
         ...quoteInput,
         id: Date.now(),
-        requestDate: new Date().toISOString(),
-        calculatedPrices: {
-            montoTotalProyecto: montoTotalDelProyecto.toFixed(2),
-            precioFinalPorEstudiante: precioFinalPorEstudiante.toFixed(2),
-            estudiantesFacturables: estudiantesFacturables
-        },
-        items: selectedProducts.map(p => ({ id: p.id, name: p.name, type: p.product_type, details: p.detallesIncluidos })),
-        facilidadesAplicadas,
-        status: 'Pendiente de Aprobación'
+        createdAt: new Date().toISOString(),
+        status: 'Pendiente de Aprobación',
+        itemsByReglon: itemsByReglon,
+        calculatedPrices: calculatedPrices,
     };
 
+    console.log('7. Cotización final ensamblada y lista para ser guardada.');
+    console.log('--- FIN DEL CÁLCULO EN PRICING ENGINE ---');
+
     return finalQuote;
-};
+}
 
 module.exports = {
-    assembleQuote,
+    assembleQuote
 };

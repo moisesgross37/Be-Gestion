@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Confección</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/confeccion_dashboard.css">
+</head>
+<body>
+    <header>
+        <h1>Línea de Tiempo de Confección</h1>
+        <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú Principal</a>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- ... (columnas existentes) ... -->
+        <div class="dashboard-column" id="col-en-confeccion">
+            <h2>En Confección</h2>
+            <div class="cards-container" id="cards-en-confeccion"></div>
+        </div>
+        <div class="dashboard-column" id="col-en-control-de-calidad">
+            <h2>En Control de Calidad</h2>
+            <div class="cards-container" id="cards-en-control-de-calidad"></div>
+        </div>
+        <div class="dashboard-column" id="col-listo-para-entrega">
+            <h2>Listo para Entrega</h2>
+            <div class="cards-container" id="cards-listo-para-entrega"></div>
+        </div>
+    </main>
+
+    <!-- ... (modal existente) ... -->
+
+    <script src="confeccion_dashboard.js"></script>
+        <!-- Modal para Asignar Diseñador -->
+    <div id="assign-designer-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Asignar Diseñador</h2>
+            <p>Selecciona un diseñador para el proyecto <strong id="modal-project-name"></strong>.</p>
+            <div class="form-group">
+                <label for="designer-select">Diseñadores Disponibles:</label>
+                <select id="designer-select"></select>
+            </div>
+            <div class="form-group">
+                <button id="confirm-assignment-btn" class="btn">Confirmar Asignación</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
