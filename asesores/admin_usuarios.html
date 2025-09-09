@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Usuarios</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Invitar Nuevo Usuario</h2>
+                <form id="invite-user-form" class="form-group">
+                    <label for="new-user-email">Email del Usuario:</label>
+                    <input type="email" id="new-user-email" name="email" required placeholder="ejemplo@correo.com">
+                    <label for="new-user-role">Rol:</label>
+                    <select id="new-user-role" name="role" required>
+                        <option value="" disabled selected>Selecciona un rol</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Coordinador">Coordinador</option>
+                        <option value="Asesor">Asesor</option>
+                        <option value="Diseñador">Diseñador</option>
+                        <option value="Colaborador / Staff">Colaborador / Staff</option>
+                    </select>
+                    <button type="submit" class="btn">Enviar Invitación</button>
+                </form>
+                <hr>
+                <h3>Usuarios Actuales</h3>
+                <div id="users-table-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/admin_usuarios.js"></script>
+
+    <!-- The Modal for Editing Roles -->
+    <div id="edit-role-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="modal-close-btn">&times;</span>
+        <h2>Editar Rol de Usuario</h2>
+        <p>Usuario: <strong id="modal-user-name"></strong></p>
+        <form id="edit-role-form">
+          <input type="hidden" id="modal-user-id">
+          <label for="modal-user-role">Nuevo Rol:</label>
+          <select id="modal-user-role" name="role" required>
+            <option value="Administrador">Administrador</option>
+            <option value="Coordinador">Coordinador</option>
+            <option value="Asesor">Asesor</option>
+            <option value="Diseñador">Diseñador</option>
+            <option value="Colaborador / Staff">Colaborador / Staff</option>
+          </select>
+          <button type="submit" class="btn">Guardar Cambios</button>
+        </form>
+      </div>
+    </div>
+</body>
+</html>
