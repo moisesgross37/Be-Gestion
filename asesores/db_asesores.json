@@ -51,7 +51,28 @@
       "name": "Jose Manuel"
     }
   ],
-  "zones": [],
+  "zones": [
+    {
+      "id": 1757453753794,
+      "name": "Santo Domingo Este"
+    },
+    {
+      "id": 1757453763494,
+      "name": "Santo Domingo Oeste"
+    },
+    {
+      "id": 1757453772243,
+      "name": "Santo Domingo Norte"
+    },
+    {
+      "id": 1757453779822,
+      "name": "Distrito Nacional"
+    },
+    {
+      "id": 1757453795560,
+      "name": "Interior Cercano"
+    }
+  ],
   "comments": [
     {
       "id": 1757445887832,

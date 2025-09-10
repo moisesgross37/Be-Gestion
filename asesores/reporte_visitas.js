@@ -2,32 +2,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Referencias a los elementos del HTML que vamos a manipular
     const tableBody = document.getElementById('visits-table-body');
     const filterAdvisor = document.getElementById('filterAdvisor');
+    const filterCenter = document.getElementById('filterCenter'); // Filtro de centro
     const filterStartDate = document.getElementById('filterStartDate');
     const filterEndDate = document.getElementById('filterEndDate');
 
-    let allVisits = []; // Un array para guardar todas las visitas una vez que las carguemos
+    let allVisits = []; // Un array para guardar todas las visitas
     let allAdvisors = []; // Un array para guardar todos los asesores
+    let allCenters = []; // Un array para guardar todos los centros
 
     /**
-     * Carga los datos iniciales (visitas y asesores) desde el servidor.
+     * Carga los datos iniciales (visitas, asesores y centros) desde el servidor.
      */
     async function loadInitialData() {
         try {
-            // Hacemos dos peticiones a la vez para ser más eficientes
-            const [visitsResponse, advisorsResponse] = await Promise.all([
+            // Hacemos tres peticiones a la vez para ser más eficientes
+            const [visitsResponse, advisorsResponse, centersResponse] = await Promise.all([
                 fetch('/api/visits'),
-                fetch('/api/advisors')
+                fetch('/api/advisors'),
+                fetch('/api/centers')
             ]);
             
-            if (!visitsResponse.ok || !advisorsResponse.ok) {
+            if (!visitsResponse.ok || !advisorsResponse.ok || !centersResponse.ok) {
                 throw new Error('No se pudieron cargar los datos del reporte.');
             }
             
             allVisits = await visitsResponse.json();
             allAdvisors = await advisorsResponse.json();
+            allCenters = await centersResponse.json();
             
-            // Una vez cargados los datos, llenamos el filtro y la tabla
+            // Una vez cargados los datos, llenamos los filtros y la tabla
             populateAdvisorFilter();
+            populateCenterFilter();
             renderVisits(allVisits);
         } catch (error) {
             console.error("Error cargando datos:", error);
@@ -44,6 +49,18 @@ document.addEventListener('DOMContentLoaded', () => {
             option.value = advisor.name;
             option.textContent = advisor.name;
             filterAdvisor.appendChild(option);
+        });
+    }
+
+    /**
+     * Llena el menú desplegable <select> con los nombres de los centros.
+     */
+    function populateCenterFilter() {
+        allCenters.forEach(center => {
+            const option = document.createElement('option');
+            option.value = center.name;
+            option.textContent = center.name;
+            filterCenter.appendChild(option);
         });
     }
 
@@ -91,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let filteredVisits = [...allVisits];
 
         const advisor = filterAdvisor.value;
+        const center = filterCenter.value;
         const startDate = filterStartDate.value;
         const endDate = filterEndDate.value;
 
@@ -98,6 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (advisor) {
             filteredVisits = filteredVisits.filter(v => v.advisorName === advisor);
         }
+
+        // Filtrar por centro
+        if (center) {
+            filteredVisits = filteredVisits.filter(v => v.centerName === center);
+        }
+
         // Filtrar por fecha de inicio
         if (startDate) {
             // Añadimos T00:00:00 para asegurar que la comparación sea desde el inicio del día
@@ -113,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Asignamos la función applyFilters a los eventos de cambio de los filtros
     filterAdvisor.addEventListener('change', applyFilters);
+    filterCenter.addEventListener('change', applyFilters);
     filterStartDate.addEventListener('change', applyFilters);
     filterEndDate.addEventListener('change', applyFilters);
 

@@ -1,0 +1,548 @@
+{
+  "proyectos_confeccion": [
+    {
+      "id": 1756378433843,
+      "codigo_proyecto": "PROY-CONF-1756378433843",
+      "fecha_creacion": "2025-08-28T10:53:53.843Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "Combo",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756378433838-Ybarra Sobre Salones - Be Eventos.docx.pdf"
+      ],
+      "status": "Diseño en Proceso",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T17:12:49.884Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756661765272-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-08-31T17:36:05.279Z"
+    },
+    {
+      "id": 1756380298034,
+      "codigo_proyecto": "PROY-CONF-1756380298034",
+      "fecha_creacion": "2025-08-28T11:24:58.034Z",
+      "cliente": "Centro Militar San Miguel Arcangel",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "polo",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756380298027-Trabajo Final.pdf"
+      ],
+      "status": "Diseño Pendiente de Asignación"
+    },
+    {
+      "id": 1756552991135,
+      "codigo_proyecto": "PROY-CONF-1756552991135",
+      "fecha_creacion": "2025-08-30T11:23:11.135Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "Polo",
+      "imagenes_referencia": [],
+      "status": "Pendiente Aprobación Cliente",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T13:11:20.169Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756647917096-Ybarra Sobre Salones - Be Eventos.docx.pdf",
+      "fecha_propuesta": "2025-08-31T13:45:17.102Z",
+      "fecha_aprobacion_interna": "2025-08-31T14:07:20.846Z"
+    },
+    {
+      "id": 1756651595715,
+      "codigo_proyecto": "PROY-CONF-1756651595715",
+      "fecha_creacion": "2025-08-31T14:46:35.715Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Leudis de los Santos",
+      "detalles_solicitud": "bamba",
+      "imagenes_referencia": [],
+      "status": "Diseño en Proceso",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T19:18:14.286Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756667904889-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-08-31T19:18:24.892Z",
+      "historial_revisiones": [
+        {
+          "fecha": "2025-08-31T19:18:37.177Z",
+          "comentario": "Ma ancha la linea"
+        }
+      ]
+    },
+    {
+      "id": 1756661865004,
+      "codigo_proyecto": "PROY-CONF-1756661865004",
+      "fecha_creacion": "2025-08-31T17:37:45.004Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Jose Batista",
+      "detalles_solicitud": "Batata con Yuca",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756661865002-Altice Residencial (1).pdf"
+      ],
+      "status": "Diseño en Proceso",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T19:06:47.893Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756667217105-Altice Residencial (1).pdf",
+      "fecha_propuesta": "2025-08-31T19:06:57.106Z"
+    },
+    {
+      "id": 1756662028001,
+      "codigo_proyecto": "PROY-CONF-1756662028001",
+      "fecha_creacion": "2025-08-31T17:40:28.001Z",
+      "cliente": "Colegio Adventista La Paz",
+      "nombre_asesor": "Leudis de los Santos",
+      "detalles_solicitud": "Yuca",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756662027996-PITLA REVISADO.pdf"
+      ],
+      "status": "Pendiente de Proforma",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T19:05:32.938Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756667162015-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-08-31T19:06:02.018Z",
+      "fecha_aprobacion_interna": "2025-08-31T19:06:09.839Z",
+      "fecha_aprobacion_cliente": "2025-08-31T22:21:16.677Z",
+      "proforma_url": "uploads_confeccion/1756678888042-Trabajo Final.pdf",
+      "fecha_proforma_subida": "2025-08-31T22:21:28.044Z",
+      "historial_revisiones": [
+        {
+          "fecha": "2025-08-31T22:21:39.796Z",
+          "comentario": "PROFORMA: cambia a x b"
+        }
+      ]
+    },
+    {
+      "id": 1756662310660,
+      "codigo_proyecto": "PROY-CONF-1756662310660",
+      "fecha_creacion": "2025-08-31T17:45:10.660Z",
+      "cliente": "Centro Militar San Miguel Arcangel",
+      "nombre_asesor": "Moises Gross",
+      "detalles_solicitud": "Polo Abrigo y gorra",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756662310659-WhatsApp Image 2025-05-16 at 09.51.03.jpeg"
+      ],
+      "status": "En Lista de Producción",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T17:45:57.487Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756662389155-PERPETUO SOCORRO PROYECTO 2026.pptx",
+      "fecha_propuesta": "2025-08-31T17:46:29.159Z",
+      "fecha_aprobacion_interna": "2025-08-31T17:46:54.155Z",
+      "fecha_aprobacion_cliente": "2025-08-31T22:02:36.771Z",
+      "proforma_url": "uploads_confeccion/1756678187308-Trabajo Final.pdf",
+      "fecha_proforma_subida": "2025-08-31T22:09:47.312Z",
+      "listado_final_url": "uploads_confeccion/1756678842501-Altice Residencial (1).pdf",
+      "fecha_autorizacion_produccion": "2025-08-31T22:20:42.505Z"
+    },
+    {
+      "id": 1756681205466,
+      "codigo_proyecto": "PROY-CONF-1756681205466",
+      "fecha_creacion": "2025-08-31T23:00:05.466Z",
+      "cliente": "Colegio San José",
+      "nombre_asesor": "Leudis de los Santos",
+      "detalles_solicitud": "Licras",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756681205462-Altice Residencial (1).pdf"
+      ],
+      "status": "Diseño Pendiente de Asignación"
+    },
+    {
+      "id": 1756681705325,
+      "codigo_proyecto": "PROY-CONF-1756681705325",
+      "fecha_creacion": "2025-08-31T23:08:25.325Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Isolina Pacheco",
+      "detalles_solicitud": "Pantalon",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756681705321-Ybarra Sobre Salones - Be Eventos.docx.pdf"
+      ],
+      "status": "Diseño Pendiente de Asignación"
+    },
+    {
+      "id": 1756681931253,
+      "codigo_proyecto": "PROY-CONF-1756681931253",
+      "fecha_creacion": "2025-08-31T23:12:11.254Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Isolina Pacheco",
+      "detalles_solicitud": "Zapato",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756681931250-Trabajo Final.pdf"
+      ],
+      "status": "Diseño Pendiente de Asignación"
+    },
+    {
+      "id": 1756682163101,
+      "codigo_proyecto": "PROY-CONF-1756682163101",
+      "fecha_creacion": "2025-08-31T23:16:03.101Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Jose Batista",
+      "detalles_solicitud": "Cordones",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756682163098-Trabajo Final.pdf"
+      ],
+      "status": "Pendiente Aprobación Cliente",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T23:24:38.260Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756683355355-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-08-31T23:35:55.359Z",
+      "fecha_aprobacion_interna": "2025-08-31T23:44:41.453Z"
+    },
+    {
+      "id": 1756684378982,
+      "codigo_proyecto": "PROY-CONF-1756684378982",
+      "fecha_creacion": "2025-08-31T23:52:58.982Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Isolina Pacheco",
+      "detalles_solicitud": "chancleta",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756684378979-Trabajo Final.pdf"
+      ],
+      "status": "Diseño Pendiente de Asignación"
+    },
+    {
+      "id": 1756684722023,
+      "codigo_proyecto": "PROY-CONF-1756684722023",
+      "fecha_creacion": "2025-08-31T23:58:42.023Z",
+      "cliente": "Colegio San José",
+      "nombre_asesor": "Jose Batista",
+      "detalles_solicitud": "Bandeja",
+      "imagenes_referencia": [],
+      "status": "Pendiente de Proforma",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-08-31T23:58:55.423Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756684753052-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-08-31T23:59:13.055Z",
+      "fecha_aprobacion_interna": "2025-08-31T23:59:32.302Z",
+      "fecha_aprobacion_cliente": "2025-08-31T23:59:54.307Z"
+    },
+    {
+      "id": 1756684928767,
+      "codigo_proyecto": "PROY-CONF-1756684928767",
+      "fecha_creacion": "2025-09-01T00:02:08.767Z",
+      "cliente": "Colegio San José",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "casa",
+      "imagenes_referencia": [],
+      "status": "En Impresión",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-01T00:02:20.412Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756684951840-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-09-01T00:02:31.842Z",
+      "fecha_aprobacion_interna": "2025-09-01T00:02:49.179Z",
+      "fecha_aprobacion_cliente": "2025-09-01T00:03:14.238Z",
+      "proforma_url": "uploads_confeccion/1756686732829-Trabajo Final.pdf",
+      "fecha_proforma_subida": "2025-09-01T00:32:12.832Z",
+      "listado_final_url": "uploads_confeccion/1756687230485-Trabajo Final.pdf",
+      "fecha_autorizacion_produccion": "2025-09-01T00:40:30.489Z",
+      "historial_produccion": [
+        {
+          "etapa": "En Diagramación",
+          "fecha": "2025-09-01T00:57:52.823Z"
+        },
+        {
+          "etapa": "En Impresión",
+          "fecha": "2025-09-01T00:58:24.819Z"
+        }
+      ]
+    },
+    {
+      "id": 1756728535715,
+      "codigo_proyecto": "PROY-CONF-1756728535715",
+      "fecha_creacion": "2025-09-01T12:08:55.715Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "Zapato",
+      "imagenes_referencia": [],
+      "status": "Pendiente Aprobación Proforma",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-01T12:09:54.772Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756728607240-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-09-01T12:10:07.242Z",
+      "fecha_aprobacion_interna": "2025-09-01T12:10:16.021Z",
+      "fecha_aprobacion_cliente": "2025-09-01T12:10:24.782Z",
+      "proforma_url": "uploads_confeccion/1756728636435-Trabajo Final.pdf",
+      "fecha_proforma_subida": "2025-09-01T12:10:36.436Z"
+    },
+    {
+      "id": 1756729405510,
+      "codigo_proyecto": "PROY-CONF-1756729405510",
+      "fecha_creacion": "2025-09-01T12:23:25.510Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "Zapatilla",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756729405505-Trabajo Final.pdf"
+      ],
+      "status": "Supervisión de Calidad",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-01T12:24:07.526Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756729467163-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-09-01T12:24:27.164Z",
+      "fecha_aprobacion_interna": "2025-09-01T12:24:35.360Z",
+      "fecha_aprobacion_cliente": "2025-09-01T12:24:47.046Z",
+      "proforma_url": "uploads_confeccion/1756729499580-Altice Residencial (1).pdf",
+      "fecha_proforma_subida": "2025-09-01T12:24:59.582Z",
+      "listado_final_url": "uploads_confeccion/1756732159064-FACTURA BE EVENTOS NO. 16 DEL 2025.docx.pdf",
+      "fecha_autorizacion_produccion": "2025-09-01T13:09:19.069Z",
+      "historial_produccion": [
+        {
+          "etapa": "En Diagramación",
+          "fecha": "2025-09-01T13:09:25.965Z"
+        },
+        {
+          "etapa": "En Impresión",
+          "fecha": "2025-09-01T13:09:32.645Z"
+        },
+        {
+          "etapa": "En Calandrado",
+          "fecha": "2025-09-01T13:09:37.413Z"
+        },
+        {
+          "etapa": "En Confección",
+          "fecha": "2025-09-01T13:09:43.038Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-01T13:09:52.628Z"
+        }
+      ]
+    },
+    {
+      "id": 1756730730664,
+      "codigo_proyecto": "PROY-CONF-1756730730664",
+      "fecha_creacion": "2025-09-01T12:45:30.664Z",
+      "cliente": "Colegio Perpetuo Socorro",
+      "nombre_asesor": "Genesis Suriel",
+      "detalles_solicitud": "Casa",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756730730661-Trabajo Final.pdf"
+      ],
+      "status": "Supervisión de Calidad",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-01T12:45:45.915Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756730758878-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-09-01T12:45:58.879Z",
+      "fecha_aprobacion_interna": "2025-09-01T12:46:05.232Z",
+      "fecha_aprobacion_cliente": "2025-09-01T12:46:11.728Z",
+      "proforma_url": "uploads_confeccion/1756730788588-Altice Residencial (1).pdf",
+      "fecha_proforma_subida": "2025-09-01T12:46:28.591Z",
+      "listado_final_url": "uploads_confeccion/1756730806045-FACTURA BE EVENTOS NO. 16 DEL 2025.docx.pdf",
+      "fecha_autorizacion_produccion": "2025-09-01T12:46:46.048Z",
+      "historial_produccion": [
+        {
+          "etapa": "En Diagramación",
+          "fecha": "2025-09-01T12:46:57.568Z"
+        },
+        {
+          "etapa": "En Impresión",
+          "fecha": "2025-09-01T12:47:11.209Z"
+        },
+        {
+          "etapa": "En Calandrado",
+          "fecha": "2025-09-01T12:54:55.668Z"
+        },
+        {
+          "etapa": "En Confección",
+          "fecha": "2025-09-01T12:55:04.348Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-01T12:55:16.470Z"
+        }
+      ]
+    },
+    {
+      "id": 1756732639889,
+      "codigo_proyecto": "PROY-CONF-1756732639889",
+      "fecha_creacion": "2025-09-01T13:17:19.889Z",
+      "cliente": "Colegio San José",
+      "nombre_asesor": "Jose Batista",
+      "detalles_solicitud": "Zapato",
+      "imagenes_referencia": [],
+      "status": "Listo para Entrega",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-01T13:21:26.168Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756732906904-Trabajo Final.pdf",
+      "fecha_propuesta": "2025-09-01T13:21:46.909Z",
+      "fecha_aprobacion_interna": "2025-09-01T13:21:55.881Z",
+      "fecha_aprobacion_cliente": "2025-09-01T13:22:02.771Z",
+      "proforma_url": "uploads_confeccion/1756732937780-Claro-Codetel Pago Factura (7).pdf",
+      "fecha_proforma_subida": "2025-09-01T13:22:17.783Z",
+      "listado_final_url": "uploads_confeccion/1756732954156-Productos - Hoja 1.pdf",
+      "fecha_autorizacion_produccion": "2025-09-01T13:22:34.159Z",
+      "historial_produccion": [
+        {
+          "etapa": "En Diagramación",
+          "fecha": "2025-09-01T13:22:41.890Z"
+        },
+        {
+          "etapa": "En Impresión",
+          "fecha": "2025-09-01T13:22:47.854Z"
+        },
+        {
+          "etapa": "En Calandrado",
+          "fecha": "2025-09-01T13:22:53.179Z"
+        },
+        {
+          "etapa": "En Confección",
+          "fecha": "2025-09-01T13:22:59.595Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-01T13:23:05.334Z"
+        },
+        {
+          "etapa": "Aprobado Calidad",
+          "fecha": "2025-09-01T13:23:25.871Z"
+        }
+      ]
+    },
+    {
+      "id": 1756852230220,
+      "codigo_proyecto": "PROY-CONF-1756852230220",
+      "fecha_creacion": "2025-09-02T22:30:30.220Z",
+      "cliente": "Colegio Caridad",
+      "nombre_asesor": "Jose Batista",
+      "detalles_solicitud": "Polo abrigo gorra",
+      "imagenes_referencia": [
+        "uploads_confeccion/1756852230214-WhatsApp Image 2025-01-07 at 12.23.08 (1).jpeg",
+        "uploads_confeccion/1756852230215-WhatsApp Image 2024-12-02 at 16.13.22.jpeg",
+        "uploads_confeccion/1756852230216-WhatsApp Image 2024-12-02 at 16.13.43.jpeg"
+      ],
+      "status": "Listo para Entrega",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-02T22:30:58.845Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756852769609-WhatsApp Image 2025-01-16 at 09.41.26.jpeg",
+      "fecha_propuesta": "2025-09-02T22:39:29.611Z",
+      "historial_revisiones": [
+        {
+          "fecha": "2025-09-02T22:32:33.655Z",
+          "comentario": "Cambiar el color"
+        },
+        {
+          "fecha": "2025-09-02T22:33:56.758Z",
+          "comentario": "CLIENTE: Cambiar el color"
+        },
+        {
+          "fecha": "2025-09-02T22:35:07.696Z",
+          "comentario": "CLIENTE: Cambiar las mangas"
+        },
+        {
+          "fecha": "2025-09-02T22:39:16.355Z",
+          "comentario": "CLIENTE: Cambiar cuello"
+        }
+      ],
+      "fecha_aprobacion_interna": "2025-09-02T22:39:34.230Z",
+      "fecha_aprobacion_cliente": "2025-09-02T22:39:41.134Z",
+      "proforma_url": "uploads_confeccion/1756852844683-Ybarra Sobre Salones - Be Eventos.docx.pdf",
+      "fecha_proforma_subida": "2025-09-02T22:40:44.687Z",
+      "listado_final_url": "uploads_confeccion/1756852887043-Listado para Graduacion.docx.pdf",
+      "fecha_autorizacion_produccion": "2025-09-02T22:41:27.045Z",
+      "historial_produccion": [
+        {
+          "etapa": "En Diagramación",
+          "fecha": "2025-09-02T22:41:44.803Z"
+        },
+        {
+          "etapa": "En Impresión",
+          "fecha": "2025-09-02T22:42:05.724Z"
+        },
+        {
+          "etapa": "En Calandrado",
+          "fecha": "2025-09-02T22:42:12.377Z"
+        },
+        {
+          "etapa": "En Confección",
+          "fecha": "2025-09-02T22:42:20.992Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-02T22:42:27.650Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-02T22:42:54.067Z"
+        },
+        {
+          "etapa": "Aprobado Calidad",
+          "fecha": "2025-09-02T22:43:01.298Z"
+        }
+      ],
+      "historial_incidencias": [
+        {
+          "comentario": "Falto un polo y una gorra",
+          "fecha": "2025-09-02T22:42:42.451Z"
+        }
+      ]
+    },
+    {
+      "id": 1756853498455,
+      "codigo_proyecto": "PROY-CONF-1756853498455",
+      "fecha_creacion": "2025-09-02T22:51:38.455Z",
+      "cliente": "Colegio Divina Providencia",
+      "nombre_asesor": "Leudis de los Santos",
+      "detalles_solicitud": "Polo nuevo color blanco y negro",
+      "imagenes_referencia": [],
+      "status": "Listo para Entrega",
+      "diseñador_id": "1756643530927",
+      "fecha_de_asignacion": "2025-09-02T22:57:31.409Z",
+      "propuesta_diseno_url": "uploads_confeccion/1756854571545-WhatsApp Image 2025-01-16 at 12.35.00.jpeg",
+      "fecha_propuesta": "2025-09-02T23:09:31.547Z",
+      "historial_revisiones": [
+        {
+          "fecha": "2025-09-02T23:02:16.966Z",
+          "comentario": "Cambiar el color del arte"
+        },
+        {
+          "fecha": "2025-09-02T23:09:08.782Z",
+          "comentario": "CLIENTE: cambiar mangas a color negro"
+        },
+        {
+          "fecha": "2025-09-02T23:11:52.783Z",
+          "comentario": "PROFORMA: Cambiar las cantidades"
+        }
+      ],
+      "fecha_aprobacion_interna": "2025-09-02T23:09:38.116Z",
+      "fecha_aprobacion_cliente": "2025-09-02T23:09:45.901Z",
+      "proforma_url": "uploads_confeccion/1756854727040-PRESUPUESTO POLITECNICO MADRE RAFAELA YBARRA.docx",
+      "fecha_proforma_subida": "2025-09-02T23:12:07.042Z",
+      "listado_final_url": "uploads_confeccion/1756854739525-listado de orden.xlsx",
+      "fecha_autorizacion_produccion": "2025-09-02T23:12:19.526Z",
+      "historial_produccion": [
+        {
+          "etapa": "En Diagramación",
+          "fecha": "2025-09-02T23:13:57.314Z"
+        },
+        {
+          "etapa": "En Impresión",
+          "fecha": "2025-09-02T23:14:06.556Z"
+        },
+        {
+          "etapa": "En Calandrado",
+          "fecha": "2025-09-02T23:14:12.513Z"
+        },
+        {
+          "etapa": "En Confección",
+          "fecha": "2025-09-02T23:14:18.006Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-02T23:14:25.783Z"
+        },
+        {
+          "etapa": "Supervisión de Calidad",
+          "fecha": "2025-09-02T23:14:45.839Z"
+        },
+        {
+          "etapa": "Aprobado Calidad",
+          "fecha": "2025-09-02T23:14:53.777Z"
+        }
+      ],
+      "historial_incidencias": [
+        {
+          "comentario": "Faltan en polo",
+          "fecha": "2025-09-02T23:14:39.729Z"
+        }
+      ]
+    }
+  ],
+  "diseñadores": [
+    {
+      "id": 1756643530927,
+      "nombre": "Benjamin Nunez"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const coordinatorContactInput = document.getElementById('coordinatorContact');
     const commentsSelect = document.getElementById('comments');
     const visitDateInput = document.getElementById('visitDate');
+    const zoneSelect = document.getElementById('zone'); // Elemento para el select de Zona
 
     // Función para establecer la fecha actual
     const setCurrentDate = () => {
@@ -38,6 +39,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     commentsSelect.innerHTML += `<option value="${comment.text}">${comment.text}</option>`;
                 });
             }
+
+            // Cargar Zonas
+            if (data.zones) {
+                data.zones.forEach(zone => {
+                    zoneSelect.innerHTML += `<option value="${zone.name}">${zone.name}</option>`;
+                });
+            }
+
         } catch (error) {
             alert('No se pudieron cargar los datos necesarios. Revise la consola.');
         }
