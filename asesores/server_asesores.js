@@ -301,6 +301,7 @@ app.post('/api/quote-requests', requireLogin, (req, res) => {
         totals: totals,
         precioFinalPorEstudiante: calculationResult.calculatedPrices[0].precioFinalPorEstudiante,
         estudiantesParaFacturar: calculationResult.calculatedPrices[0].estudiantesFacturables,
+        facilidadesAplicadas: calculationResult.facilidadesAplicadas,
         id: Date.now(),
         status: 'pendiente',
         createdAt: new Date().toISOString()
@@ -506,7 +507,16 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, requireAdmin, (req, res) =>
         doc.font('Helvetica').fontSize(10).text(`Cálculos basados en un mínimo de ${quote.estudiantesParaFacturar || 0} estudiantes.`, 50, y);
         y += 15;
         doc.font('Helvetica').fontSize(10).text('Condiciones de Pago a debatir.', 50, y);
-        y += 30;
+        y += 15;
+
+        if (quote.facilidadesAplicadas && quote.facilidadesAplicadas.length > 0) {
+            quote.facilidadesAplicadas.forEach(facilidad => {
+                doc.font('Helvetica-Bold').fontSize(10).text(facilidad, 50, y);
+                y += 15;
+            });
+        }
+
+        y += 15;
 
         const finalMessage = 'Agradecemos la oportunidad de colaborar con usted y estamos comprometidos a brindarle un servicio excepcional. Si tiene alguna pregunta o necesita más detalles, no dude en ponerse en contacto con nosotros.';
         doc.font('Helvetica').fontSize(10).text(finalMessage, 50, y, { align: 'center', width: 500 });

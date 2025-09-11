@@ -126,6 +126,20 @@
       "name": "Liceo Don Honorio",
       "contactName": "",
       "contactNumber": ""
+    },
+    {
+      "id": 1757596383756,
+      "code": "C-1003",
+      "name": "Colegio Caridad",
+      "contactName": "",
+      "contactNumber": ""
+    },
+    {
+      "id": 1757597812237,
+      "code": "C-1004",
+      "name": "Instituto Tecnico Fabio Amable Mota",
+      "contactName": "",
+      "contactNumber": ""
     }
   ],
   "products": [
@@ -792,6 +806,26 @@
       "contactName": "Juan Perez",
       "contactNumber": "8092240076",
       "comments": "Visita Inicial"
+    },
+    {
+      "id": 1757596383756,
+      "advisorName": "Griselda Paniaga",
+      "visitDate": "2025-09-11",
+      "centerName": "Colegio Caridad",
+      "zone": "Santo Domingo Este",
+      "contactName": "Sra Caridad",
+      "contactNumber": "8095945050",
+      "comments": "Visita Inicial"
+    },
+    {
+      "id": 1757597812237,
+      "advisorName": "Leudis de los Santos",
+      "visitDate": "2025-09-04",
+      "centerName": "Instituto Tecnico Fabio Amable Mota",
+      "zone": "Santo Domingo Este",
+      "contactName": "Jenny",
+      "contactNumber": "8094453040",
+      "comments": "Visita de Cierre de Venta"
     }
   ],
   "quotes": [
@@ -827,7 +861,7 @@
       "aporteInstitucion": 0,
       "estudiantesCortesia": 0,
       "id": 1757530502683,
-      "status": "aprobada",
+      "status": "archivada",
       "createdAt": "2025-09-10T18:55:02.683Z"
     },
     {
@@ -1103,6 +1137,148 @@
       "id": 1757548879564,
       "status": "aprobada",
       "createdAt": "2025-09-11T00:01:19.564Z"
+    },
+    {
+      "quoteNumber": "COT-240012",
+      "clientName": "Colegio Caridad",
+      "clientId": 1757596383756,
+      "eventName": "Combo y Graduacion",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 75,
+      "productIds": [
+        3,
+        8,
+        16,
+        56
+      ],
+      "aporteInstitucion": 1000,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 75 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "429352.85",
+          "subtotal": "429352.85",
+          "totalPrice": "506636.36"
+        }
+      ],
+      "totals": {
+        "subtotal": "429352.85",
+        "itbis": "77283.51",
+        "grandTotal": "506636.36"
+      },
+      "precioFinalPorEstudiante": "7600.00",
+      "estudiantesParaFacturar": 67,
+      "id": 1757596638604,
+      "status": "rechazada",
+      "createdAt": "2025-09-11T13:17:18.604Z",
+      "rejectionReason": "Cambio de costo en polos"
+    },
+    {
+      "quoteNumber": "COT-240013",
+      "clientName": "Colegio Caridad",
+      "clientId": 1757596383756,
+      "eventName": "Combo y Lanzamiento",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 70,
+      "productIds": [
+        3,
+        8,
+        16,
+        56
+      ],
+      "aporteInstitucion": 1000,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 70 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "408690.30",
+          "subtotal": "408690.30",
+          "totalPrice": "482254.55"
+        }
+      ],
+      "totals": {
+        "subtotal": "408690.30",
+        "itbis": "73564.25",
+        "grandTotal": "482254.55"
+      },
+      "precioFinalPorEstudiante": "7700.00",
+      "estudiantesParaFacturar": 63,
+      "id": 1757597274697,
+      "status": "archivada",
+      "createdAt": "2025-09-11T13:27:54.697Z"
+    },
+    {
+      "quoteNumber": "COT-240014",
+      "clientName": "Instituto Tecnico Fabio Amable Mota",
+      "clientId": 1757597812237,
+      "eventName": "Combo y Lanzamiento",
+      "advisorName": "Leudis de los Santos",
+      "studentCount": 246,
+      "productIds": [
+        4,
+        12,
+        16,
+        19,
+        57
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 246 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "1358635.59",
+          "subtotal": "1358635.59",
+          "totalPrice": "1603190.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "1358635.59",
+        "itbis": "244554.41",
+        "grandTotal": "1603190.00"
+      },
+      "precioFinalPorEstudiante": "7300.00",
+      "estudiantesParaFacturar": 221,
+      "id": 1757597932573,
+      "status": "archivada",
+      "createdAt": "2025-09-11T13:38:52.573Z"
+    },
+    {
+      "quoteNumber": "COT-240015",
+      "clientName": "Colegio Caridad",
+      "clientId": 1757596383756,
+      "eventName": "Propiesta de Investdur",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 77,
+      "productIds": [
+        3
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 77 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "59322.03",
+          "subtotal": "59322.03",
+          "totalPrice": "70000.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "59322.03",
+        "itbis": "10677.97",
+        "grandTotal": "70000.00"
+      },
+      "precioFinalPorEstudiante": "1000.00",
+      "estudiantesParaFacturar": 69,
+      "facilidadesAplicadas": [
+        "7 polo(s) extra(s) de cortesía."
+      ],
+      "id": 1757605285748,
+      "status": "pendiente",
+      "createdAt": "2025-09-11T15:41:25.748Z"
     }
   ]
 }

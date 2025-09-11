@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  buttonsHTML += '<a href="/asesores-menu.html" class="nav-button">Módulo de Asesores</a>';
             }
             if (['Administrador', 'Coordinador', 'Asesor', 'Diseñador', 'Colaborador / Staff'].includes(user.rol)) {
-                buttonsHTML += '<a href="/logistica-menu.html" class="nav-button">Módulo de Logística</a>';
+                // buttonsHTML += '<a href="/logistica-menu.html" class="nav-button">Módulo de Logística</a>';
             }
             
             menuContainer.innerHTML = buttonsHTML;
