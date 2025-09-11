@@ -103,6 +103,13 @@
       "name": "Colegio San Martin ",
       "contactName": "Juan Pertez",
       "contactNumber": "8092240000"
+    },
+    {
+      "id": 1757550906465,
+      "code": "C-1002",
+      "name": "Liceo Don Honorio",
+      "contactName": "",
+      "contactNumber": ""
     }
   ],
   "products": [
@@ -759,6 +766,327 @@
       "coordinatorContact": "8092240000",
       "visitDate": "2025-08-01",
       "comments": "v"
+    },
+    {
+      "id": 1757550906465,
+      "advisorName": "Leudis de los Santos",
+      "visitDate": "2025-09-10",
+      "centerName": "Liceo Don Honorio",
+      "zone": "Santo Domingo Este",
+      "contactName": "Juan Perez",
+      "contactNumber": "8092240076",
+      "comments": "Visita Inicial"
+    }
+  ],
+  "quotes": [
+    {
+      "quoteNumber": "COT-240001",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Combo Promocional",
+      "advisorName": "Jose Manuel",
+      "studentCount": 40,
+      "productIds": [
+        4,
+        9
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "id": 1757524309164,
+      "status": "archivada",
+      "createdAt": "2025-09-10T17:11:49.164Z"
+    },
+    {
+      "quoteNumber": "COT-240002",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Propuesta Combo 02",
+      "advisorName": "Leudis de los Santos",
+      "studentCount": 33,
+      "productIds": [
+        4,
+        10,
+        17
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "id": 1757530502683,
+      "status": "aprobada",
+      "createdAt": "2025-09-10T18:55:02.683Z"
+    },
+    {
+      "quoteNumber": "COT-240003",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Pruea numero 03",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 60,
+      "productIds": [
+        4,
+        9,
+        16,
+        19
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "id": 1757530898129,
+      "status": "aprobada",
+      "createdAt": "2025-09-10T19:01:38.129Z"
+    },
+    {
+      "quoteNumber": "COT-240004",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Prueba 04",
+      "advisorName": "Isolina Pacheco",
+      "studentCount": 33,
+      "productIds": [
+        31,
+        32,
+        33
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "calculatedPrices": [
+        {
+          "montoTotalProyecto": "197406.00",
+          "precioFinalPorEstudiante": "6800.00",
+          "estudiantesFacturables": 29
+        }
+      ],
+      "facilidadesAplicadas": [],
+      "id": 1757531196674,
+      "status": "rechazada",
+      "createdAt": "2025-09-10T19:06:36.674Z",
+      "rejectionReason": "Los productos no son esos"
+    },
+    {
+      "quoteNumber": "COT-240005",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Pruebas 05",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 122,
+      "productIds": [
+        2,
+        7,
+        20
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "calculatedPrices": [
+        {
+          "montoTotalProyecto": "196623.33",
+          "precioFinalPorEstudiante": "1800.00",
+          "estudiantesFacturables": 109
+        }
+      ],
+      "facilidadesAplicadas": [
+        "12 polo(s) extra(s) de cortesía."
+      ],
+      "id": 1757531272826,
+      "status": "rechazada",
+      "createdAt": "2025-09-10T19:07:52.826Z",
+      "rejectionReason": "Cantidad por debajo de la Oferta"
+    },
+    {
+      "quoteNumber": "COT-240006",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "prueba 06",
+      "advisorName": "Isolina Pacheco",
+      "studentCount": 23,
+      "productIds": [
+        3
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 23 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "19491.53",
+          "subtotal": "19491.53",
+          "totalPrice": "23000.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "19491.53",
+        "itbis": "3508.47",
+        "grandTotal": "23000.00"
+      },
+      "id": 1757532527866,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T19:28:47.866Z"
+    },
+    {
+      "quoteNumber": "COT-240007",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Propuesta Combo",
+      "advisorName": "Isolina Pacheco",
+      "studentCount": 40,
+      "productIds": [
+        4
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 40 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "41355.93",
+          "subtotal": "41355.93",
+          "totalPrice": "48800.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "41355.93",
+        "itbis": "7444.07",
+        "grandTotal": "48800.00"
+      },
+      "id": 1757543610934,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T22:33:30.934Z"
+    },
+    {
+      "quoteNumber": "COT-240008",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Combo 2025",
+      "advisorName": "Leudis de los Santos",
+      "studentCount": 70,
+      "productIds": [
+        2,
+        3,
+        8,
+        16
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 70 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "182172.58",
+          "subtotal": "182172.58",
+          "totalPrice": "214963.64"
+        }
+      ],
+      "totals": {
+        "subtotal": "182172.58",
+        "itbis": "32791.06",
+        "grandTotal": "214963.64"
+      },
+      "precioFinalPorEstudiante": "3400.00",
+      "id": 1757547715233,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T23:41:55.233Z"
+    },
+    {
+      "quoteNumber": "COT-240009",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Propuesta Investidura",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 77,
+      "productIds": [
+        31,
+        32,
+        33,
+        35
+      ],
+      "aporteInstitucion": 500,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 77 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "417691.83",
+          "subtotal": "417691.83",
+          "totalPrice": "492876.36"
+        }
+      ],
+      "totals": {
+        "subtotal": "417691.83",
+        "itbis": "75184.53",
+        "grandTotal": "492876.36"
+      },
+      "precioFinalPorEstudiante": "7150.00",
+      "estudiantesParaFacturar": 69,
+      "id": 1757548324627,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T23:52:04.627Z"
+    },
+    {
+      "quoteNumber": "COT-240010",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Combo Promocional",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 77,
+      "productIds": [
+        31,
+        32,
+        33,
+        35
+      ],
+      "aporteInstitucion": 500,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 77 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "417691.83",
+          "subtotal": "417691.83",
+          "totalPrice": "492876.36"
+        }
+      ],
+      "totals": {
+        "subtotal": "417691.83",
+        "itbis": "75184.53",
+        "grandTotal": "492876.36"
+      },
+      "precioFinalPorEstudiante": "7150.00",
+      "estudiantesParaFacturar": 69,
+      "id": 1757548680811,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T23:58:00.811Z"
+    },
+    {
+      "quoteNumber": "COT-240011",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "PRueba 11",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 76,
+      "productIds": [
+        31,
+        32,
+        33,
+        40
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 76 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "781380.58",
+          "subtotal": "781380.58",
+          "totalPrice": "922029.09"
+        }
+      ],
+      "totals": {
+        "subtotal": "781380.58",
+        "itbis": "140648.51",
+        "grandTotal": "922029.09"
+      },
+      "precioFinalPorEstudiante": "13600.00",
+      "estudiantesParaFacturar": 68,
+      "id": 1757548879564,
+      "status": "aprobada",
+      "createdAt": "2025-09-11T00:01:19.564Z"
     }
   ]
 }
