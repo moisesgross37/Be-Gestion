@@ -16,31 +16,39 @@
 
         <main>
             <div class="card">
-                <h2>Invitar Nuevo Usuario</h2>
-                <form id="invite-user-form" class="form-group">
-                    <label for="new-user-email">Email del Usuario:</label>
-                    <input type="email" id="new-user-email" name="email" required placeholder="ejemplo@correo.com">
-                    <label for="new-user-role">Rol:</label>
-                    <select id="new-user-role" name="role" required>
-                        <option value="" disabled selected>Selecciona un rol</option>
-                        <option value="Administrador">Administrador</option>
-                        <option value="Coordinador">Coordinador</option>
-                        <option value="Asesor">Asesor</option>
-                        <option value="Diseñador">Diseñador</option>
-                        <option value="Colaborador / Staff">Colaborador / Staff</option>
-                    </select>
-                    <button type="submit" class="btn">Enviar Invitación</button>
+                <h2>Crear Nuevo Usuario</h2>
+                <form id="create-user-form">
+                    <div class="form-group">
+                        <label for="new-user-nombre">Nombre Completo:</label>
+                        <input type="text" id="new-user-nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-user-username">Nombre de Usuario:</label>
+                        <input type="text" id="new-user-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-user-password">Contraseña Temporal:</label>
+                        <input type="password" id="new-user-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-user-role">Rol:</label>
+                        <select id="new-user-role" required>
+                            <option value="">Seleccione un rol...</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Coordinador">Coordinador</option>
+                            <option value="Asesor">Asesor</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Crear Usuario</button>
                 </form>
                 <hr>
                 <h3>Usuarios Actuales</h3>
-                <div id="users-table-container"></div>
+                <div id="users-table-container">
+                    </div>
             </div>
         </main>
     </div>
 
-    <script src="/admin_usuarios.js"></script>
-
-    <!-- The Modal for Editing Roles -->
     <div id="edit-role-modal" class="modal">
       <div class="modal-content">
         <span class="close-btn" id="modal-close-btn">&times;</span>
@@ -53,12 +61,13 @@
             <option value="Administrador">Administrador</option>
             <option value="Coordinador">Coordinador</option>
             <option value="Asesor">Asesor</option>
-            <option value="Diseñador">Diseñador</option>
-            <option value="Colaborador / Staff">Colaborador / Staff</option>
           </select>
           <button type="submit" class="btn">Guardar Cambios</button>
         </form>
       </div>
     </div>
+
+    <script src="/admin_usuarios.js"></script>
+
 </body>
 </html>

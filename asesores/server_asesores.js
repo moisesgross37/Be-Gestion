@@ -5,7 +5,6 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const { assembleQuote } = require('./pricingEngine.js');
-const { sendInvitationEmail } = require('./mailer.js');
 const { checkRole } = require('./permissions.js');
 const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
@@ -19,152 +18,258 @@ let products = []; // Caché de productos en memoria
 
 // --- Carga de Productos desde CSV ---
 const loadProducts = () => {
-const csvPath = path.join(__dirname, 'Productos.csv');
-if (!fs.existsSync(csvPath)) {
-console.error('Error: El archivo Productos.csv no se encuentra.');
-return;
-}
-const tempProducts = [];
-fs.createReadStream(csvPath)
-.pipe(csv({
-mapHeaders: ({ header }) => header.trim(),
-mapValues: ({ value }) => value.trim()
-}))
-.on('data', (row) => {
-tempProducts.push(row);
-})
-.on('end', () => {
-products = tempProducts.map((p, index) => ({ ...p, id: index + 1 }));
-console.log(`${products.length} productos cargados y procesados exitosamente desde Productos.csv.`);
-})
-.on('error', (error) => {
-console.error('Error al leer el CSV de productos:', error);
-});
+    const csvPath = path.join(__dirname, 'Productos.csv');
+    if (!fs.existsSync(csvPath)) {
+        console.error('Error: El archivo Productos.csv no se encuentra.');
+        return;
+    }
+    const tempProducts = [];
+    fs.createReadStream(csvPath)
+        .pipe(csv({
+            mapHeaders: ({ header }) => header.trim(),
+            mapValues: ({ value }) => value.trim()
+        }))
+        .on('data', (row) => {
+            tempProducts.push(row);
+        })
+        .on('end', () => {
+            products = tempProducts.map((p, index) => ({ ...p, id: index + 1 }));
+            console.log(`${products.length} productos cargados y procesados exitosamente desde Productos.csv.`);
+        })
+        .on('error', (error) => {
+            console.error('Error al leer el CSV de productos:', error);
+        });
 };
 
 app.use(session({
-secret: 'secreto_del_modulo_asesores_estable',
-resave: false,
-saveUninitialized: true,
-cookie: { secure: false }
+    secret: 'secreto_del_modulo_asesores_estable',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
 }));
 
 // --- Middleware y Helpers ---
 const readDB = () => {
-try {
-if (!fs.existsSync(DB_PATH)) {
-const initialData = { users: [], advisors: [], comments: [], centers: [], visits: [], zones: [], quotes: [], products: [] };
-fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
-}
-const data = fs.readFileSync(DB_PATH, 'utf8');
-return JSON.parse(data);
-} catch (error) { console.error('Error reading DB:', error); return {}; }
+    try {
+        if (!fs.existsSync(DB_PATH)) {
+            const initialData = { users: [], advisors: [], comments: [], centers: [], visits: [], zones: [], quotes: [], products: [] };
+            fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
+        }
+        const data = fs.readFileSync(DB_PATH, 'utf8');
+        return JSON.parse(data);
+    } catch (error) { console.error('Error reading DB:', error); return {}; }
 };
 const writeDB = (data) => {
-fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
 };
 const requireLogin = (req, res, next) => {
-if (!req.session.user) {
-return res.status(401).json({ message: 'No autenticado.' });
-}
-next();
+    if (!req.session.user) {
+        return res.status(401).json({ message: 'No autenticado.' });
+    }
+    next();
 };
 const requireAdmin = checkRole(['Administrador']);
 
 // --- TODAS LAS RUTAS DE API ---
 app.post('/api/login', async (req, res) => {
-const { email, password } = req.body;
-const db = readDB();
-const user = (db.users || []).find(u => u.email === email && u.estado === 'activo');
-if (!user) return res.status(404).json({ message: 'Usuario no encontrado.' });
-const isMatch = await bcrypt.compare(password, user.password);
-if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta.' });
-const userResponse = { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol };
-req.session.user = userResponse;
-res.status(200).json({ message: 'Login exitoso', redirectTo: '/index.html', user: userResponse });
+    const { username, password } = req.body; // CORREGIDO: usa username
+    const db = readDB();
+    const user = (db.users || []).find(u => u.username === username && u.estado === 'activo'); // CORREGIDO: busca por username
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado.' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta.' });
+    const userResponse = { id: user.id, nombre: user.nombre, username: user.username, rol: user.rol }; // CORREGIDO: devuelve username
+    req.session.user = userResponse;
+    res.status(200).json({ message: 'Login exitoso', redirectTo: '/index.html', user: userResponse });
 });
+
+
+// --- INICIO: RUTAS DE GESTIÓN DE USUARIOS ---
+
+// GET /api/users - Obtener todos los usuarios para la tabla de administración
+app.get('/api/users', requireLogin, requireAdmin, (req, res) => {
+    try {
+        const db = readDB();
+        const users = (db.users || []).map(u => ({
+            id: u.id,
+            nombre: u.nombre,
+            username: u.username, // CORREGIDO: usa username
+            rol: u.rol,
+            estado: u.estado
+        }));
+        res.status(200).json(users);
+    } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+// POST /api/users - Crear un nuevo usuario directamente
+app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const { nombre, username, password, rol } = req.body; // CORREGIDO: usa username
+        if (!nombre || !username || !password || !rol) {
+            return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
+        }
+
+        const db = readDB();
+        const userExists = (db.users || []).some(u => u.username === username); // CORREGIDO: busca por username
+        if (userExists) {
+            return res.status(409).json({ message: 'El nombre de usuario ya está registrado.' }); // CORREGIDO: mensaje
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = {
+            id: Date.now(),
+            nombre,
+            username, // CORREGIDO: usa username
+            password: hashedPassword,
+            rol,
+            estado: 'activo'
+        };
+
+        db.users.push(newUser);
+        writeDB(db);
+
+        res.status(201).json({ message: 'Usuario creado con éxito.' });
+    } catch (error) {
+        console.error('Error al crear usuario:', error);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+// POST /api/users/:id/edit-role - Edita el rol de un usuario específico
+app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { newRole } = req.body;
+
+        const db = readDB();
+        const userIndex = (db.users || []).findIndex(u => u.id === userId);
+
+        if (userIndex === -1) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+
+        db.users[userIndex].rol = newRole;
+        writeDB(db);
+
+        res.status(200).json({ message: 'Rol del usuario actualizado con éxito.' });
+    } catch (error) {
+        console.error('Error al editar el rol del usuario:', error);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+// POST /api/users/:id/toggle-status - Cambia el estado de un usuario (activo/inactivo)
+app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const db = readDB();
+        const userIndex = (db.users || []).findIndex(u => u.id === userId);
+
+        if (userIndex === -1) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+
+        const currentState = db.users[userIndex].estado;
+        db.users[userIndex].estado = currentState === 'activo' ? 'inactivo' : 'activo';
+        writeDB(db);
+
+        res.status(200).json({ message: 'Estado del usuario cambiado con éxito.' });
+    } catch (error) {
+        console.error('Error al cambiar el estado del usuario:', error);
+        res.status(500).json({ message: 'Error al cambiar el estado del usuario.' });
+    }
+});
+
+// --- FIN: RUTAS DE GESTIÓN DE USUARIOS ---
+
+// ... (El resto del código de asesores, cotizaciones, etc., permanece aquí sin cambios) ...
+
 app.get('/api/advisors', requireLogin, (req, res) => res.json(readDB().advisors || []));
 app.post('/api/advisors', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-const newAdvisor = { id: Date.now(), name: req.body.name };
-if (!db.advisors) db.advisors = [];
-db.advisors.push(newAdvisor);
-writeDB(db);
-res.status(201).json(newAdvisor);
+    const db = readDB();
+    const newAdvisor = { id: Date.now(), name: req.body.name };
+    if (!db.advisors) db.advisors = [];
+    db.advisors.push(newAdvisor);
+    writeDB(db);
+    res.status(201).json(newAdvisor);
 });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-db.advisors = (db.advisors || []).filter(a => a.id !== parseInt(req.params.id));
-writeDB(db);
-res.status(200).json({ message: 'Asesor eliminado' });
+    const db = readDB();
+    db.advisors = (db.advisors || []).filter(a => a.id !== parseInt(req.params.id));
+    writeDB(db);
+    res.status(200).json({ message: 'Asesor eliminado' });
 });
 app.get('/api/comments', requireLogin, requireAdmin, (req, res) => res.json(readDB().comments || []));
 app.post('/api/comments', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-const newComment = { id: Date.now(), text: req.body.name };
-if (!db.comments) db.comments = [];
-db.comments.push(newComment);
-writeDB(db);
-res.status(201).json(newComment);
+    const db = readDB();
+    const newComment = { id: Date.now(), text: req.body.name };
+    if (!db.comments) db.comments = [];
+    db.comments.push(newComment);
+    writeDB(db);
+    res.status(201).json(newComment);
 });
 app.delete('/api/comments/:id', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-db.comments = (db.comments || []).filter(c => c.id !== parseInt(req.params.id));
-writeDB(db);
-res.status(200).json({ message: 'Comentario eliminado' });
+    const db = readDB();
+    db.comments = (db.comments || []).filter(c => c.id !== parseInt(req.params.id));
+    writeDB(db);
+    res.status(200).json({ message: 'Comentario eliminado' });
 });
 app.get('/api/zones', requireLogin, (req, res) => res.json(readDB().zones || []));
 app.post('/api/zones', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-const newZone = { id: Date.now(), name: req.body.name };
-if (!db.zones) db.zones = [];
-db.zones.push(newZone);
-writeDB(db);
-res.status(201).json(newZone);
+    const db = readDB();
+    const newZone = { id: Date.now(), name: req.body.name };
+    if (!db.zones) db.zones = [];
+    db.zones.push(newZone);
+    writeDB(db);
+    res.status(201).json(newZone);
 });
 app.delete('/api/zones/:id', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-db.zones = (db.zones || []).filter(z => z.id !== parseInt(req.params.id));
-writeDB(db);
-res.status(200).json({ message: 'Zona eliminada' });
+    const db = readDB();
+    db.zones = (db.zones || []).filter(z => z.id !== parseInt(req.params.id));
+    writeDB(db);
+    res.status(200).json({ message: 'Zona eliminada' });
 });
 app.get('/api/centers/search', requireLogin, (req, res) => {
-const searchTerm = (req.query.q || '').toLowerCase();
-const db = readDB();
-const centers = (db.centers || []).filter(c => c && c.name && c.name.toLowerCase().includes(searchTerm));
-res.json(centers);
+    const searchTerm = (req.query.q || '').toLowerCase();
+    const db = readDB();
+    const centers = (db.centers || []).filter(c => c && c.name && c.name.toLowerCase().includes(searchTerm));
+    res.json(centers);
 });
 app.get('/api/centers', requireLogin, (req, res) => res.json(readDB().centers || []));
 app.put('/api/centers/:id', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-const centerId = parseInt(req.params.id);
-db.centers = (db.centers || []).map(c => c.id === centerId ? { ...c, ...req.body } : c);
-writeDB(db);
-res.status(200).json({ message: 'Centro actualizado' });
+    const db = readDB();
+    const centerId = parseInt(req.params.id);
+    db.centers = (db.centers || []).map(c => c.id === centerId ? { ...c, ...req.body } : c);
+    writeDB(db);
+    res.status(200).json({ message: 'Centro actualizado' });
 });
 app.delete('/api/centers/:id', requireLogin, requireAdmin, (req, res) => {
-const db = readDB();
-db.centers = (db.centers || []).filter(c => c.id !== parseInt(req.params.id));
-writeDB(db);
-res.status(200).json({ message: 'Centro eliminado' });
+    const db = readDB();
+    db.centers = (db.centers || []).filter(c => c.id !== parseInt(req.params.id));
+    writeDB(db);
+    res.status(200).json({ message: 'Centro eliminado' });
 });
 app.get('/api/next-quote-number', requireLogin, (req, res) => {
-const db = readDB();
-const quotes = db.quotes || [];
-const lastQuote = quotes.sort((a, b) => {
-const numA = parseInt(a.quoteNumber.split('-')[1]);
-const numB = parseInt(b.quoteNumber.split('-')[1]);
-return numB - numA;
-})[0];
-const nextNumber = lastQuote ? parseInt(lastQuote.quoteNumber.split('-')[1]) + 1 : 240001;
-res.json({ quoteNumber: `COT-${nextNumber}` });
+    const db = readDB();
+    const quotes = db.quotes || [];
+    const lastQuote = quotes.sort((a, b) => {
+        const numA = parseInt((a.quoteNumber || 'COT-240000').split('-')[1]);
+        const numB = parseInt((b.quoteNumber || 'COT-240000').split('-')[1]);
+        return numB - numA;
+    })[0];
+    const nextNumber = lastQuote ? parseInt(lastQuote.quoteNumber.split('-')[1]) + 1 : 240001;
+    res.json({ quoteNumber: `COT-${nextNumber}` });
 });
 app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
-const quoteInput = req.body;
-const dbData = readDB();
-dbData.products = products;
-const estimate = assembleQuote(quoteInput, dbData);
-res.json(estimate);
+    const quoteInput = req.body;
+    const dbData = readDB();
+    dbData.products = products;
+    const estimate = assembleQuote(quoteInput, dbData);
+    res.json(estimate);
 });
 app.post('/api/quote-requests', requireLogin, (req, res) => {
     const quoteInput = req.body;
@@ -183,7 +288,7 @@ app.post('/api/quote-requests', requireLogin, (req, res) => {
             grandTotal: grandTotal.toFixed(2)
         };
         items.push({
-            description: `Servicios de graduación para ${quoteInput.studentCount} estudiantes.`, 
+            description: `Servicios de graduación para ${quoteInput.studentCount} estudiantes.`,
             quantity: 1,
             unitPrice: subtotal.toFixed(2),
             subtotal: subtotal.toFixed(2),
@@ -219,24 +324,24 @@ app.get('/api/quote-requests', requireLogin, (req, res) => {
 });
 
 app.get('/api/quotes', requireLogin, requireAdmin, (req, res) => {
-try {
-const db = readDB();
-const allQuotes = db.quotes || [];
-res.status(200).json(allQuotes);
-} catch (error) {
-console.error('Error fetching all quotes:', error);
-res.status(500).json({ message: 'Error interno del servidor al obtener cotizaciones.' });
-}
+    try {
+        const db = readDB();
+        const allQuotes = db.quotes || [];
+        res.status(200).json(allQuotes);
+    } catch (error) {
+        console.error('Error fetching all quotes:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener cotizaciones.' });
+    }
 });
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, (req, res) => {
-try {
-const db = readDB();
-const pendingQuotes = (db.quotes || []).filter(q => q.status === 'pendiente');
-res.status(200).json(pendingQuotes);
-} catch (error) {
-console.error('Error fetching pending quotes:', error);
-res.status(500).json({ message: 'Error interno del servidor al obtener cotizaciones.' });
-}
+    try {
+        const db = readDB();
+        const pendingQuotes = (db.quotes || []).filter(q => q.status === 'pendiente');
+        res.status(200).json(pendingQuotes);
+    } catch (error) {
+        console.error('Error fetching pending quotes:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener cotizaciones.' });
+    }
 });
 
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, (req, res) => {
@@ -287,46 +392,46 @@ app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, (req, re
 });
 
 app.get('/api/data', requireLogin, (req, res) => {
-const db = readDB();
-res.json({
-advisors: db.advisors || [],
-comments: db.comments || [],
-centers: db.centers || [],
-zones: db.zones || [],
-products: products
-});
+    const db = readDB();
+    res.json({
+        advisors: db.advisors || [],
+        comments: db.comments || [],
+        centers: db.centers || [],
+        zones: db.zones || [],
+        products: products
+    });
 });
 app.get('/api/visits', requireLogin, (req, res) => res.json(readDB().visits || []));
 app.post('/api/visits', requireLogin, (req, res) => {
-const db = readDB();
-const visitData = req.body;
-if (visitData.centerName) {
-const centerExists = (db.centers || []).some(c => c.name.toLowerCase() === visitData.centerName.toLowerCase());
-if (!centerExists) {
-let nextCode = 1001;
-if (db.centers && db.centers.length > 0) {
-const maxCode = db.centers.reduce((max, center) => {
-const codeNum = parseInt((center.code || 'C-0').split('-')[1]);
-return codeNum > max ? codeNum : max;
-}, 0);
-nextCode = maxCode > 0 ? maxCode + 1 : 1001;
-}
-const newCenter = {
-id: Date.now(),
-code: 'C-' + nextCode,
-name: visitData.centerName,
-contactName: visitData.coordinatorName || '',
-contactNumber: visitData.coordinatorContact || ''
-};
-if (!db.centers) db.centers = [];
-db.centers.push(newCenter);
-}
-}
-const newVisit = { id: Date.now(), ...visitData };
-if (!db.visits) db.visits = [];
-db.visits.push(newVisit);
-writeDB(db);
-res.status(201).json(newVisit);
+    const db = readDB();
+    const visitData = req.body;
+    if (visitData.centerName) {
+        const centerExists = (db.centers || []).some(c => c.name.toLowerCase() === visitData.centerName.toLowerCase());
+        if (!centerExists) {
+            let nextCode = 1001;
+            if (db.centers && db.centers.length > 0) {
+                const maxCode = db.centers.reduce((max, center) => {
+                    const codeNum = parseInt((center.code || 'C-0').split('-')[1]);
+                    return codeNum > max ? codeNum : max;
+                }, 0);
+                nextCode = maxCode > 0 ? maxCode + 1 : 1001;
+            }
+            const newCenter = {
+                id: Date.now(),
+                code: 'C-' + nextCode,
+                name: visitData.centerName,
+                contactName: visitData.coordinatorName || '',
+                contactNumber: visitData.coordinatorContact || ''
+            };
+            if (!db.centers) db.centers = [];
+            db.centers.push(newCenter);
+        }
+    }
+    const newVisit = { id: Date.now(), ...visitData };
+    if (!db.visits) db.visits = [];
+    db.visits.push(newVisit);
+    writeDB(db);
+    res.status(201).json(newVisit);
 });
 
 // --- RUTA PARA GENERAR PDF DE COTIZACIÓN ---
@@ -363,12 +468,12 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, requireAdmin, (req, res) =>
         doc.text(`Nombre del Asesor: ${quote.advisorName || 'No especificado'}`, 50, 220);
 
         doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', 50, 250, { align: 'justify', width: 500 });
-        
+
         let y = doc.y + 20;
         doc.moveTo(50, y).lineTo(550, y).stroke();
         y += 20;
 
-        const selectedProducts = quote.productIds.map(id => products.find(p => p.id == id)).filter(p => p);
+        const selectedProducts = (quote.productIds || []).map(id => products.find(p => p.id == id)).filter(p => p);
         if (selectedProducts.length > 0) {
             selectedProducts.forEach(product => {
                 doc.font('Helvetica-Bold').fontSize(12).text(product['PRODUCTO / SERVICIO'].trim(), 50, y);
@@ -432,6 +537,6 @@ app.get('/panel_aprobacion_cotizaciones.html', requireLogin, requireAdmin, (req,
 
 // --- Inicio del Servidor ---
 app.listen(PORT, () => {
-loadProducts();
-console.log('✅ Servidor de Asesores (v11.0 Con Cotizador) corriendo en http://localhost:3000');
+    loadProducts();
+    console.log('✅ Servidor de Asesores (v11.0 Con Cotizador) corriendo en http://localhost:3000');
 });

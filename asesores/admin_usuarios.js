@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tableContainer = document.getElementById('users-table-container');
-    const inviteForm = document.getElementById('invite-user-form');
+    const createForm = document.getElementById('create-user-form'); // ACTUALIZADO: Apunta al nuevo formulario
 
     // --- Elementos del Modal de Edición ---
     const editModal = document.getElementById('edit-role-modal');
@@ -10,36 +10,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalUserIdInput = document.getElementById('modal-user-id');
     const modalUserRoleSelect = document.getElementById('modal-user-role');
 
-    // --- Lógica para enviar el formulario de invitación ---
-    if (inviteForm) {
-        inviteForm.addEventListener('submit', async (e) => {
+    // --- Lógica para enviar el formulario de CREACIÓN de usuario ---
+    // REEMPLAZADO: Toda la lógica de invitación fue sustituida por esta nueva lógica de creación.
+    if (createForm) {
+        createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const emailInput = document.getElementById('new-user-email');
-            const rolInput = document.getElementById('new-user-role');
-            const email = emailInput.value;
-            const rol = rolInput.value;
+            
+            const nombre = document.getElementById('new-user-nombre').value;
+            const username = document.getElementById('new-user-username').value;
+            const password = document.getElementById('new-user-password').value;
+            const rol = document.getElementById('new-user-role').value;
 
-            if (!email || !rol) {
+            if (!nombre || !username || !password || !rol) {
                 alert('Por favor, complete todos los campos.');
                 return;
             }
 
             try {
-                const response = await fetch('/api/invite-user', {
+                const response = await fetch('/api/users', { // Llama a la nueva ruta para crear usuarios
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, rol }),
-                    credentials: 'same-origin'
+                    body: JSON.stringify({ nombre, username, password, rol })
                 });
+                
                 const result = await response.json();
+
                 if (!response.ok) {
-                    throw new Error(result.message || `Error del servidor: ${response.status}`);
+                    throw new Error(result.message || 'Error del servidor.');
                 }
-                alert(`¡Invitación enviada a ${email}!\n\nPuedes ver el correo de prueba en esta URL:\n${result.previewUrl}`);
-                inviteForm.reset();
-                cargarUsuarios();
+                
+                alert('¡Usuario creado exitosamente!');
+                createForm.reset();
+                cargarUsuarios(); // Recarga la tabla para mostrar el nuevo usuario
+
             } catch (error) {
-                alert(`Error al enviar la invitación: ${error.message}`);
+                alert(`Error al crear el usuario: ${error.message}`);
             }
         });
     }
@@ -67,8 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm(`¿Estás seguro de que quieres cambiar el estado del usuario "${userName}"?`)) {
                     try {
                         const response = await fetch(`/api/users/${userId}/toggle-status`, {
-                            method: 'POST',
-                            credentials: 'same-origin'
+                            method: 'POST'
                         });
                         const result = await response.json();
                         if (!response.ok) {
@@ -108,8 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`/api/users/${userId}/edit-role`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ newRole }),
-                    credentials: 'same-origin'
+                    body: JSON.stringify({ newRole })
                 });
 
                 const result = await response.json();
@@ -130,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Lógica para cargar y mostrar la tabla de usuarios ---
     async function cargarUsuarios() {
         try {
-            const response = await fetch('/api/users', { credentials: 'same-origin' });
+            const response = await fetch('/api/users');
             if (!response.ok) {
                 throw new Error(`Error del servidor: ${response.status}`);
             }
@@ -152,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <thead>
                     <tr>
                         <th>Nombre</th>
-                        <th>Email</th>
+                        <th>Nombre de Usuario</th>
                         <th>Rol</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -165,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tablaHTML += `
                 <tr>
                     <td>${user.nombre}</td>
-                    <td>${user.email}</td>
+                    <td>${user.username}</td>
                     <td>${user.rol}</td>
                     <td><span class="status-${user.estado}">${user.estado}</span></td>
                     <td>

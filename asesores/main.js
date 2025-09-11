@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            
+            // CORREGIDO: Se captura 'username' en lugar de 'email'
+            const username = document.getElementById('username').value; 
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('error-message');
 
@@ -13,13 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
+                    // CORREGIDO: Se envía 'username' al servidor
+                    body: JSON.stringify({ username, password }), 
                 });
                 const data = await response.json();
 
                 if (response.ok) {
-                    localStorage.setItem('currentUser', JSON.stringify(data.user));
-                    // ✅ AHORA REDIRIGE AL NUEVO MENÚ PRINCIPAL
+                    // MANTENIDO: Usamos 'currentUser' porque el menú y logout dependen de él
+                    localStorage.setItem('currentUser', JSON.stringify(data.user)); 
+                    // MANTENIDO: Redirige a index.html donde está el menú principal
                     window.location.href = '/index.html'; 
                 } else {
                     errorMessage.textContent = data.message || 'Error al iniciar sesión.';
@@ -30,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA PARA EL BOTÓN DE CERRAR SESIÓN ---
+    // --- LÓGICA PARA EL BOTÓN DE CERRAR SESIÓN (SIN CAMBIOS) ---
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
@@ -49,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA PARA EL MENÚ PRINCIPAL DINÁMICO ---
+    // --- LÓGICA PARA EL MENÚ PRINCIPAL DINÁMICO (SIN CAMBIOS) ---
     const menuContainer = document.getElementById('menu-buttons-container');
     const userNameSpan = document.getElementById('user-name');
     if (menuContainer) {

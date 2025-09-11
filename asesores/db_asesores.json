@@ -23,6 +23,22 @@
       "password": "$2b$10$Pqch...Eci2ZCbb5p3zwi.V56n2W//mcarv6YddbwX.hRVUnnuNQ.",
       "rol": "Asesor",
       "estado": "inactivo"
+    },
+    {
+      "id": 1757589491103,
+      "nombre": "Wander Perez",
+      "username": "Wander",
+      "password": "$2b$10$UXiEFOumPmBp8tgjigxdAetWv3wT0UXoRam4VJdO5OVLeTkujSC9a",
+      "rol": "Administrador",
+      "estado": "activo"
+    },
+    {
+      "id": 1757590800984,
+      "nombre": "Moises Gross",
+      "username": "Moises",
+      "password": "$2b$10$OwN6htZvaEzT3atIegl9xeGHlj6n.hgl0j7.Fv3wzEWn.xHjhZdAK",
+      "rol": "Administrador",
+      "estado": "activo"
     }
   ],
   "advisors": [
