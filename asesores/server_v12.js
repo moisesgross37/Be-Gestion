@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.0 FINAL Con Base de Datos PostgreSQL) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.1 Corrigiendo Rutas HTML) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -329,7 +329,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const dbDataForCalculation = { products: products }; // Usamos productos en memoria
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation);
 
-    // Simplificamos los datos a guardar
     const { clientName, advisorName, studentCount, productIds } = quoteInput;
     const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult;
     
@@ -366,7 +365,6 @@ app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (r
     }
 });
 
-
 // VISITAS
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, advisorName, visitDate, commentText } = req.body;
@@ -382,20 +380,15 @@ app.post('/api/visits', requireLogin, async (req, res) => {
     }
 });
 
-// ... aquí irían las demás rutas de cotizaciones, pdfs, etc. que tendríamos que migrar...
-
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
-// CORREGIDO: Para que sirva los archivos desde la carpeta raíz del proyecto
-const rootDir = path.join(__dirname, '..'); 
-app.use(express.static(rootDir));
-app.use('/public', express.static(path.join(rootDir, 'public')));
-app.use('/asesores', express.static(path.join(rootDir, 'asesores'))); // Permite acceso a la carpeta asesores
+// CORREGIDO: Para que sirva los archivos desde la misma carpeta 'asesores'
+app.use(express.static(path.join(__dirname))); 
 
-app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'login.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
+
 app.get('/*.html', requireLogin, (req, res) => {
-    const requestedPath = path.join(rootDir, req.path);
-    // Por seguridad, chequea que el archivo exista antes de enviarlo
+    const requestedPath = path.join(__dirname, req.path);
     if (fs.existsSync(requestedPath)) {
         res.sendFile(requestedPath);
     } else {
@@ -408,5 +401,5 @@ app.get('/*.html', requireLogin, (req, res) => {
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase(); // Asegura que las tablas existan antes de empezar
-    console.log(`✅ Servidor de Asesores (v12.0 FINAL Con DB) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.1 Corrigiendo Rutas HTML) corriendo en el puerto ${PORT}`);
 });
