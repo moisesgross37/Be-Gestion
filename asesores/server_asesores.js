@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v11.0 Con Cotizador) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.0 FINAL Con Base de Datos PostgreSQL) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
