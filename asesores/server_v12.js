@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.5 FINAL Y LIMPIO) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.6 FINAL CON CORRECCIONES POST) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
 const { Pool } = require('pg');
-const pgSession = require('connect-pg-simple')(session); // Para sesiones persistentes en la DB
+const pgSession = require('connect-pg-simple')(session);
 
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
@@ -26,7 +26,6 @@ const pool = new Pool({
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
-        // CORRECCIÓN: Se elimina la creación de la tabla "session" para dejar que connect-pg-simple la maneje.
         await client.query(`
             CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, nombre VARCHAR(255) NOT NULL, username VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, rol VARCHAR(50) NOT NULL, estado VARCHAR(50) DEFAULT 'activo' );
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
@@ -102,6 +101,7 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
+// Users
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
     const { nombre, username, password, rol } = req.body;
@@ -118,17 +118,31 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// Advisors
 app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// Visits
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => { const { centerName, advisorName, visitDate, commentText } = req.body; try { await pool.query('INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)', [centerName, advisorName, visitDate, commentText]); res.status(201).json({ message: "Visita registrada" }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// Centers
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// Zones
+app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+// RESTAURADO: Ruta POST para añadir Zonas
+app.post('/api/zones', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newZone = await pool.query('INSERT INTO zones (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newZone.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+app.delete('/api/zones/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Zona eliminada' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// Comments
+app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+// RESTAURADO: Ruta POST para añadir Comentarios
+app.post('/api/comments', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newComment = await pool.query('INSERT INTO comments (text) VALUES ($1) RETURNING *', [name]); res.status(201).json(newComment.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Comentario eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// Quote Logic
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
         const result = await pool.query("SELECT quoteNumber FROM quotes WHERE quoteNumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quoteNumber FROM 5) AS INTEGER) DESC LIMIT 1");
@@ -176,5 +190,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.5 FINAL Y LIMPIO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.6 FINAL Y CORREGIDO) corriendo en el puerto ${PORT}`);
 });
