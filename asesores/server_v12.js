@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.4 FINAL Y COMPLETO) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.5 FINAL Y LIMPIO) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
 const { Pool } = require('pg');
-const pgSession = require('connect-pg-simple')(session);
+const pgSession = require('connect-pg-simple')(session); // Para sesiones persistentes en la DB
 
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
@@ -26,6 +26,7 @@ const pool = new Pool({
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
+        // CORRECCIÓN: Se elimina la creación de la tabla "session" para dejar que connect-pg-simple la maneje.
         await client.query(`
             CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, nombre VARCHAR(255) NOT NULL, username VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, rol VARCHAR(50) NOT NULL, estado VARCHAR(50) DEFAULT 'activo' );
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
@@ -34,14 +35,10 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS centers ( id SERIAL PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), contactName VARCHAR(255), contactNumber VARCHAR(50) );
             CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quoteNumber VARCHAR(50), clientName VARCHAR(255), advisorName VARCHAR(255), studentCount INTEGER, productIds INTEGER[], precioFinalPorEstudiante NUMERIC, estudiantesParaFacturar INTEGER, facilidadesAplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionReason TEXT, createdAt TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centerName VARCHAR(255), advisorName VARCHAR(255), visitDate DATE, commentText TEXT, createdAt TIMESTAMPTZ DEFAULT NOW() );
-            CREATE TABLE IF NOT EXISTS "session" ( "sid" varchar NOT NULL COLLATE "default", "sess" json NOT NULL, "expire" timestamp(6) NOT NULL ) WITH (OIDS=FALSE);
-            ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
         `);
-        console.log('✅ Base de datos inicializada y tablas aseguradas.');
+        console.log('✅ Base de datos inicializada y tablas de aplicación aseguradas.');
     } catch (err) {
-        if (err.code !== '42P07') { 
-           console.error('Error al inicializar la base de datos:', err);
-        }
+       console.error('Error al inicializar las tablas de la aplicación:', err);
     } finally {
         client.release();
     }
@@ -105,7 +102,6 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// Users
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
     const { nombre, username, password, rol } = req.body;
@@ -122,25 +118,17 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Advisors
 app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Visits
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => { const { centerName, advisorName, visitDate, commentText } = req.body; try { await pool.query('INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)', [centerName, advisorName, visitDate, commentText]); res.status(201).json({ message: "Visita registrada" }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Centers
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
-// RESTAURADO: Ruta para Zonas
 app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
-// RESTAURADO: Ruta para Comentarios
 app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Quote Logic
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
         const result = await pool.query("SELECT quoteNumber FROM quotes WHERE quoteNumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quoteNumber FROM 5) AS INTEGER) DESC LIMIT 1");
@@ -171,7 +159,6 @@ app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
-// RESTAURADO: Ruta para Cotizaciones Pendientes
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdAt DESC");
@@ -189,5 +176,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.4 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.5 FINAL Y LIMPIO) corriendo en el puerto ${PORT}`);
 });
