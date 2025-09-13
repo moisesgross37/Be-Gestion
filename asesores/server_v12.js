@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.6 FINAL CON CORRECCIONES POST) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.7 CON CÁLCULO EN TIEMPO REAL) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +35,6 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quoteNumber VARCHAR(50), clientName VARCHAR(255), advisorName VARCHAR(255), studentCount INTEGER, productIds INTEGER[], precioFinalPorEstudiante NUMERIC, estudiantesParaFacturar INTEGER, facilidadesAplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionReason TEXT, createdAt TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centerName VARCHAR(255), advisorName VARCHAR(255), visitDate DATE, commentText TEXT, createdAt TIMESTAMPTZ DEFAULT NOW() );
         `);
-        console.log('✅ Base de datos inicializada y tablas de aplicación aseguradas.');
     } catch (err) {
        console.error('Error al inicializar las tablas de la aplicación:', err);
     } finally {
@@ -129,16 +128,25 @@ app.post('/api/visits', requireLogin, async (req, res) => { const { centerName, 
 
 // Centers
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+// NUEVO: Ruta para buscar centros (clientes) para el autocompletado
+app.get('/api/centers/search', requireLogin, async (req, res) => {
+    const searchTerm = (req.query.q || '').toLowerCase();
+    try {
+        const result = await pool.query("SELECT id, name FROM centers WHERE LOWER(name) LIKE $1", [`%${searchTerm}%`]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error en la búsqueda de centros:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
 
 // Zones
 app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-// RESTAURADO: Ruta POST para añadir Zonas
 app.post('/api/zones', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newZone = await pool.query('INSERT INTO zones (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newZone.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/zones/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Zona eliminada' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 // Comments
 app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-// RESTAURADO: Ruta POST para añadir Comentarios
 app.post('/api/comments', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newComment = await pool.query('INSERT INTO comments (text) VALUES ($1) RETURNING *', [name]); res.status(201).json(newComment.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Comentario eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
@@ -162,6 +170,22 @@ app.get('/api/data', requireLogin, async (req, res) => {
         ]);
         res.json({ advisors: advisors.rows, comments: comments.rows, centers: centers.rows, zones: zones.rows, products: products });
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
+});
+
+// NUEVO: Ruta para calcular la estimación en tiempo real
+app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
+    const quoteInput = req.body;
+    const dbDataForCalculation = {
+        products: products
+        // Aquí podrías añadir más datos de la DB si el motor de precios los necesita
+    };
+    try {
+        const estimate = assembleQuote(quoteInput, dbDataForCalculation);
+        res.json(estimate);
+    } catch (error) {
+        console.error("Error en el motor de precios:", error);
+        res.status(500).json({ message: "Error al calcular la estimación." });
+    }
 });
 
 app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes (clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals, status, quoteNumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
@@ -190,5 +214,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.6 FINAL Y CORREGIDO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.7 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
 });
