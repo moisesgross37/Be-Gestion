@@ -1,4 +1,59 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v15.0 PRODUCCIÓN) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v15.1 PRODUCCIÓN) ==============
+// ... (todo el código anterior es exactamente el mismo) ...
+
+// Centers
+app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+app.get('/api/centers/search', requireLogin, async (req, res) => {
+    const searchTerm = (req.query.q || '').toLowerCase();
+    try {
+        const result = await pool.query("SELECT id, name FROM centers WHERE LOWER(name) LIKE $1", [`%${searchTerm}%`]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error en la búsqueda de centros:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
+
+// --- AÑADIDO: Ruta para actualizar (EDITAR) un centro ---
+app.put('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, contactName, contactNumber } = req.body;
+    try {
+        await pool.query(
+            'UPDATE centers SET name = $1, contactname = $2, contactnumber = $3 WHERE id = $4',
+            [name, contactName, contactNumber, id]
+        );
+        res.status(200).json({ message: 'Centro actualizado con éxito' });
+    } catch (err) {
+        console.error('Error actualizando centro:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+// --- AÑADIDO: Ruta para ELIMINAR un centro ---
+app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        // Opcional: Primero verificar si el centro está en uso en alguna cotización
+        // const quotes = await pool.query('SELECT id FROM quotes WHERE clientname = (SELECT name FROM centers WHERE id = $1)', [req.params.id]);
+        // if (quotes.rows.length > 0) {
+        //     return res.status(409).json({ message: 'No se puede eliminar el centro porque está asociado a una o más cotizaciones.' });
+        // }
+        
+        await pool.query('DELETE FROM centers WHERE id = $1', [req.params.id]);
+        res.status(200).json({ message: 'Centro de estudio eliminado con éxito' });
+    } catch (err) {
+        console.error('Error eliminando centro:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+
+// ... (todo el resto del código es exactamente el mismo) ...
+// ============== El resto del archivo server.js v15.0 se mantiene igual ==============
+
+// --- CÓDIGO COMPLETO PARA EVITAR DUDAS ---
+// Copia y pega todo este bloque en tu server.js
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -77,7 +132,6 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
-// ... (Otras rutas se mantienen igual)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -152,6 +206,29 @@ app.get('/api/centers/search', requireLogin, async (req, res) => {
     } catch (err) {
         console.error('Error en la búsqueda de centros:', err);
         res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
+app.put('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, contactName, contactNumber } = req.body;
+    try {
+        await pool.query(
+            'UPDATE centers SET name = $1, contactname = $2, contactnumber = $3 WHERE id = $4',
+            [name, contactName, contactNumber, id]
+        );
+        res.status(200).json({ message: 'Centro actualizado con éxito' });
+    } catch (err) {
+        console.error('Error actualizando centro:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM centers WHERE id = $1', [req.params.id]);
+        res.status(200).json({ message: 'Centro de estudio eliminado con éxito' });
+    } catch (err) {
+        console.error('Error eliminando centro:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
 app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
@@ -237,8 +314,6 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-
-// --- NUEVA RUTA PARA ARCHIVAR ---
 app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, async (req, res) => {
     try {
         await pool.query("UPDATE quotes SET status = 'archivada' WHERE id = $1", [req.params.id]);
@@ -248,7 +323,6 @@ app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, async (r
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-
 app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
     try {
         const quoteId = req.params.id;
@@ -273,9 +347,9 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         doc.font('Helvetica').fontSize(10).text(quoteDate, 450, currentY + 20, { align: 'left' });
         doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', pageMargin, currentY + 40, { align: 'center' });
         currentY += 80;
-        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`, pageMargin, currentY);
+        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`);
         currentY += 20;
-        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`, pageMargin, currentY);
+        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`);
         currentY += 30;
         doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', pageMargin, currentY, { 
             align: 'justify',
@@ -346,5 +420,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v15.0 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v15.1 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
 });
