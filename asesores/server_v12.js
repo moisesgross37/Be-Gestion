@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.8 FINAL CON CREACIÓN DE CENTROS) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.9 CON GENERACIÓN DE PDF RESTAURADA) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -123,37 +123,27 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { cons
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 // Visits
-app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
-// CORRECCIÓN: Se restaura la lógica para crear un centro si no existe al registrar una visita
+app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY "visitDate" DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact } = req.body;
     const client = await pool.connect();
     try {
-        await client.query('BEGIN'); // Iniciar transacción
-
-        // 1. Verificar si el centro ya existe
+        await client.query('BEGIN');
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1', [centerName]);
-        
-        // 2. Si no existe, crearlo
         if (centerResult.rows.length === 0) {
-            console.log(`El centro "${centerName}" no existe, se creará uno nuevo.`);
             await client.query(
                 'INSERT INTO centers (name, contactName, contactNumber) VALUES ($1, $2, $3)',
                 [centerName, coordinatorName || '', coordinatorContact || '']
             );
         }
-
-        // 3. Registrar la visita
         await client.query(
-            'INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)',
+            'INSERT INTO visits ("centerName", "advisorName", "visitDate", "commentText") VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
         );
-
-        await client.query('COMMIT'); // Confirmar transacción
+        await client.query('COMMIT');
         res.status(201).json({ message: "Visita registrada y centro asegurado" });
     } catch (err) {
-        await client.query('ROLLBACK'); // Revertir en caso de error
+        await client.query('ROLLBACK');
         console.error("Error al registrar visita:", err);
         res.status(500).json({ message: 'Error en el servidor' });
     } finally {
@@ -187,8 +177,8 @@ app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => 
 // Quote Logic
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT quoteNumber FROM quotes WHERE quoteNumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quoteNumber FROM 5) AS INTEGER) DESC LIMIT 1");
-        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
+        const result = await pool.query(`SELECT "quoteNumber" FROM quotes WHERE "quoteNumber" LIKE 'COT-%' ORDER BY CAST(SUBSTRING("quoteNumber" FROM 5) AS INTEGER) DESC LIMIT 1`);
+        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quoteNumber.split('-')[1]) : 240000;
         const nextNumber = lastNumber + 1;
         res.json({ quoteNumber: `COT-${nextNumber}` });
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
@@ -218,23 +208,94 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
     }
 });
 
-app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes (clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals, status, quoteNumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
+app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes ("clientName", "advisorName", "studentCount", "productIds", "precioFinalPorEstudiante", "estudiantesParaFacturar", "facilidadesAplicadas", items, totals, status, "quoteNumber") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
 
 app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM quotes ORDER BY createdAt DESC");
+        const result = await pool.query('SELECT * FROM quotes ORDER BY "createdAt" DESC');
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdAt DESC");
+        const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY "createdAt" DESC`);
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching pending quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (req, res) => { try { await pool.query("UPDATE quotes SET status = 'aprobada' WHERE id = $1", [req.params.id]); res.status(200).json({ message: 'Cotización aprobada con éxito' }); } catch (err) { console.error('Error aprobando cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
+
+// RESTAURADO: Ruta para generar el PDF de la cotización
+app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
+    try {
+        const quoteId = req.params.id;
+        const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [quoteId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).send('Cotización no encontrada');
+        }
+        const quote = result.rows[0];
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
+        doc.pipe(res);
+
+        // --- FONDO DE PÁGINA (MEMBRETE) ---
+        const backgroundImagePath = path.join(__dirname, 'plantillas', 'Timbrada BE EVENTOS.jpg');
+        if (fs.existsSync(backgroundImagePath)) {
+            doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        }
+
+        // --- DIBUJAR CONTENIDO ---
+        const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO') : '';
+        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 470, 138, { align: 'left' });
+        doc.font('Helvetica').fontSize(10).text(quoteDate, 470, 158, { align: 'left' });
+        doc.font('Helvetica-Bold').fontSize(16).text('PROPUESTA', 50, 160, { align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`, 50, 200);
+        doc.text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`, 50, 220);
+        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado...', 50, 250, { align: 'justify', width: 500 });
+        
+        let y = doc.y + 20;
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        y += 20;
+
+        const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
+        if (selectedProducts.length > 0) {
+            selectedProducts.forEach(product => {
+                doc.font('Helvetica-Bold').fontSize(12).text(product['PRODUCTO / SERVICIO'].trim(), 50, y);
+                y = doc.y + 5;
+                const detail = product['DETALLE / INCLUYE'];
+                if (detail && detail.trim() !== '') {
+                    const detailItems = detail.split(',').map(item => `- ${item.trim()}`);
+                    doc.font('Helvetica').fontSize(10).text(detailItems.join('\n'), 60, y, { width: 450, lineGap: 2 });
+                    y = doc.y + 10;
+                }
+                y += 10;
+            });
+        }
+
+        y += 20;
+        const pricePerStudent = quote.preciofinalporestudiante || 0;
+        doc.font('Helvetica-Bold').fontSize(12).text('Presupuesto por estudiante:', 50, y, { align: 'right', width: 400 });
+        doc.font('Helvetica-Bold').fontSize(14).text(`RD$ ${parseFloat(pricePerStudent).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
+        y = doc.y + 20;
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        y += 20;
+        doc.font('Helvetica-Bold').fontSize(10).text('Comentarios y Condiciones:', 50, y);
+        y += 15;
+        doc.font('Helvetica').fontSize(10).text(`Cálculos basados en un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`, 50, y);
+        y += 15;
+        doc.font('Helvetica').fontSize(10).text('Condiciones de Pago a debatir.', 50, y);
+        
+        doc.end();
+    } catch (error) {
+        console.error('Error al generar el PDF:', error);
+        res.status(500).send('Error interno al generar el PDF');
+    }
+});
+
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
@@ -244,5 +305,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.8 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.9 CON PDF) corriendo en el puerto ${PORT}`);
 });
