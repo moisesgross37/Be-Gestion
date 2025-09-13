@@ -36,14 +36,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.dataset.quoteId = quote.id;
 
-            const formattedDate = new Date(quote.createdAt).toLocaleDateString('es-DO', {
-                year: 'numeric', month: 'long', day: 'numeric'
+            // CORRECCIÓN: Se usa la propiedad 'createdat' en minúsculas
+            const formattedDate = new Date(quote.createdat).toLocaleDateString('es-DO', {
+                year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
             });
 
+            // CORRECCIÓN: Se usan las propiedades en minúsculas que vienen del servidor
             row.innerHTML = `
-                <td>${quote.quoteNumber}</td>
-                <td>${quote.clientName}</td>
-                <td>${quote.advisorName}</td>
+                <td>${quote.quotenumber || 'N/A'}</td>
+                <td>${quote.clientname || 'N/A'}</td>
+                <td>${quote.advisorname || 'N/A'}</td>
                 <td>${formattedDate}</td>
                 <td class="actions">
                     <a href="/api/quote-requests/${quote.id}/pdf" target="_blank" class="admin-button view-btn">Ver PDF</a>
@@ -84,7 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleReject(quoteId) {
         const reason = prompt('Por favor, ingrese el motivo del rechazo:');
-        if (!reason) {
+        if (reason === null) return; // El usuario presionó cancelar
+        if (!reason.trim()) {
             alert('El rechazo ha sido cancelado. Debe proporcionar un motivo.');
             return;
         }

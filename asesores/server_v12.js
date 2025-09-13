@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.8 FINAL CON CREACIÓN DE CENTROS) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v13.1 ESTABLE) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -31,9 +31,9 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
             CREATE TABLE IF NOT EXISTS comments ( id SERIAL PRIMARY KEY, text TEXT NOT NULL );
             CREATE TABLE IF NOT EXISTS zones ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
-            CREATE TABLE IF NOT EXISTS centers ( id SERIAL PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), contactName VARCHAR(255), contactNumber VARCHAR(50) );
-            CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quoteNumber VARCHAR(50), clientName VARCHAR(255), advisorName VARCHAR(255), studentCount INTEGER, productIds INTEGER[], precioFinalPorEstudiante NUMERIC, estudiantesParaFacturar INTEGER, facilidadesAplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionReason TEXT, createdAt TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
-            CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centerName VARCHAR(255), advisorName VARCHAR(255), visitDate DATE, commentText TEXT, createdAt TIMESTAMPTZ DEFAULT NOW() );
+            CREATE TABLE IF NOT EXISTS centers ( id SERIAL PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), contactname VARCHAR(255), contactnumber VARCHAR(255) );
+            CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quotenumber VARCHAR(50), clientname VARCHAR(255), advisorname VARCHAR(255), studentcount INTEGER, productids INTEGER[], preciofinalporestudiante NUMERIC, estudiantesparafacturar INTEGER, facilidadesaplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionreason TEXT, createdat TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
+            CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
         `);
     } catch (err) {
        console.error('Error al inicializar las tablas de la aplicación:', err);
@@ -77,7 +77,7 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
-
+// ... (todas las rutas de login, users, advisors, etc. se mantienen igual)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -123,37 +123,27 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { cons
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 // Visits
-app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
-// CORRECCIÓN: Se restaura la lógica para crear un centro si no existe al registrar una visita
+app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact } = req.body;
     const client = await pool.connect();
     try {
-        await client.query('BEGIN'); // Iniciar transacción
-
-        // 1. Verificar si el centro ya existe
+        await client.query('BEGIN');
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1', [centerName]);
-        
-        // 2. Si no existe, crearlo
         if (centerResult.rows.length === 0) {
-            console.log(`El centro "${centerName}" no existe, se creará uno nuevo.`);
             await client.query(
-                'INSERT INTO centers (name, contactName, contactNumber) VALUES ($1, $2, $3)',
+                'INSERT INTO centers (name, contactname, contactnumber) VALUES ($1, $2, $3)',
                 [centerName, coordinatorName || '', coordinatorContact || '']
             );
         }
-
-        // 3. Registrar la visita
         await client.query(
-            'INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)',
+            'INSERT INTO visits (centername, advisorname, visitdate, commenttext) VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
         );
-
-        await client.query('COMMIT'); // Confirmar transacción
+        await client.query('COMMIT');
         res.status(201).json({ message: "Visita registrada y centro asegurado" });
     } catch (err) {
-        await client.query('ROLLBACK'); // Revertir en caso de error
+        await client.query('ROLLBACK');
         console.error("Error al registrar visita:", err);
         res.status(500).json({ message: 'Error en el servidor' });
     } finally {
@@ -187,11 +177,11 @@ app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => 
 // Quote Logic
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT quoteNumber FROM quotes WHERE quoteNumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quoteNumber FROM 5) AS INTEGER) DESC LIMIT 1");
+        const result = await pool.query(`SELECT quotenumber FROM quotes WHERE quotenumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quotenumber FROM 5) AS INTEGER) DESC LIMIT 1`);
         const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
         const nextNumber = lastNumber + 1;
         res.json({ quoteNumber: `COT-${nextNumber}` });
-    } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
+    } catch (err) { console.error("Error getting next quote number:", err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
 app.get('/api/data', requireLogin, async (req, res) => {
@@ -203,7 +193,7 @@ app.get('/api/data', requireLogin, async (req, res) => {
             pool.query('SELECT * FROM zones ORDER BY name ASC')
         ]);
         res.json({ advisors: advisors.rows, comments: comments.rows, centers: centers.rows, zones: zones.rows, products: products });
-    } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
+    } catch (err) { console.error("Error fetching initial data:", err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
 app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
@@ -218,23 +208,135 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
     }
 });
 
-app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes (clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals, status, quoteNumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
+app.post('/api/quote-requests', requireLogin, async (req, res) => { 
+    const quoteInput = req.body; 
+    const dbDataForCalculation = { products: products }; 
+    const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
+    const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
+    const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; 
+    try { 
+        await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
+        res.status(201).json({ message: 'Cotización guardada con éxito' }); 
+    } catch (err) { 
+        console.error('Error al guardar cotización:', err); 
+        res.status(500).json({ message: 'Error interno del servidor.' }); 
+    } 
+});
 
 app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM quotes ORDER BY createdAt DESC");
+        const result = await pool.query('SELECT * FROM quotes ORDER BY createdat DESC');
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdAt DESC");
+        const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdat DESC`);
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching pending quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (req, res) => { try { await pool.query("UPDATE quotes SET status = 'aprobada' WHERE id = $1", [req.params.id]); res.status(200).json({ message: 'Cotización aprobada con éxito' }); } catch (err) { console.error('Error aprobando cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
+
+// AÑADIDO: Ruta para rechazar una cotización
+app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    if (!reason) {
+        return res.status(400).json({ message: 'Se requiere un motivo de rechazo.' });
+    }
+    try {
+        await pool.query("UPDATE quotes SET status = 'rechazada', rejectionreason = $1 WHERE id = $2", [reason, id]);
+        res.status(200).json({ message: 'Cotización rechazada con éxito' });
+    } catch (err) {
+        console.error('Error rechazando cotización:', err);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
+    try {
+        const quoteId = req.params.id;
+        const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [quoteId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).send('Cotización no encontrada');
+        }
+        const quote = result.rows[0];
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
+        doc.pipe(res);
+
+        const backgroundImagePath = path.join(__dirname, 'plantillas', 'Timbrada BE EVENTOS.jpg');
+        if (fs.existsSync(backgroundImagePath)) {
+            doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        }
+
+        const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' }) : '';
+        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 470, 138, { align: 'left' });
+        doc.font('Helvetica').fontSize(10).text(quoteDate, 470, 158, { align: 'left' });
+        doc.font('Helvetica-Bold').fontSize(16).text('PROPUESTA', { align: 'center' });
+        doc.moveDown();
+        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`);
+        doc.text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`);
+        doc.moveDown();
+        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado para los servicios solicitados, diseñados para ofrecer una experiencia memorable a sus estudiantes.', { align: 'justify', width: 500 });
+        
+        let y = doc.y + 15;
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        y += 15;
+
+        const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
+        if (selectedProducts.length > 0) {
+            doc.font('Helvetica-Bold').fontSize(12).text('Servicios Incluidos:', 50, y);
+            y = doc.y + 5;
+            selectedProducts.forEach(product => {
+                doc.font('Helvetica-Bold').fontSize(11).text(product['PRODUCTO / SERVICIO'].trim(), 50, y);
+                y = doc.y + 2;
+                const detail = product['DETALLE / INCLUYE'];
+                if (detail && detail.trim() !== '') {
+                    const detailItems = detail.split(',').map(item => `- ${item.trim()}`);
+                    doc.font('Helvetica').fontSize(10).text(detailItems.join('\n'), 60, y, { width: 450, lineGap: 2 });
+                    y = doc.y + 10;
+                }
+                y += 5;
+            });
+        }
+
+        y = Math.max(y, doc.y) + 15;
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        y += 15;
+
+        doc.font('Helvetica-Bold').fontSize(12).text('Inversión por Estudiante:', 50, y, { align: 'right', width: 400 });
+        const pricePerStudent = quote.preciofinalporestudiante || 0;
+        doc.font('Helvetica-Bold').fontSize(14).text(`RD$ ${parseFloat(pricePerStudent).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
+        y = doc.y + 15;
+
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        y += 15;
+
+        doc.font('Helvetica-Bold').fontSize(10).text('Comentarios y Condiciones:', 50, y);
+        y += 15;
+        doc.font('Helvetica').fontSize(10).text(`- Presupuesto basado en la participación de ${quote.estudiantesparafacturar || 0} estudiantes.`, 50, y);
+        y += 15;
+        doc.font('Helvetica').fontSize(10).text('- El pago se realiza en dos cuotas: 50% para reservar la fecha y 50% el día del evento.', 50, y);
+        y += 15;
+        if(quote.facilidadesaplicadas && quote.facilidadesaplicadas.length > 0) {
+            doc.font('Helvetica-Bold').fontSize(10).text('Facilidades Aplicadas:', 50, y);
+            y += 15;
+            doc.font('Helvetica').fontSize(10).list(quote.facilidadesaplicadas, 50, y);
+        }
+        
+        doc.end();
+    } catch (error) {
+        console.error('Error al generar el PDF:', error);
+        res.status(500).send('Error interno al generar el PDF');
+    }
+});
+
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
@@ -244,5 +346,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.8 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v13.1 ESTABLE) corriendo en el puerto ${PORT}`);
 });
