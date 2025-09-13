@@ -30,11 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         quotes.forEach(quote => {
             const row = document.createElement('tr');
+            // CORRECCIÓN: Se usan las propiedades en minúsculas
             row.innerHTML = `
-                <td>${quote.quoteNumber || 'N/A'}</td>
-                <td>${new Date(quote.createdAt).toLocaleDateString()}</td>
-                <td>${quote.clientName || 'N/A'}</td>
-                <td>${quote.advisorName || 'No especificado'}</td>
+                <td>${quote.quotenumber || 'N/A'}</td>
+                <td>${new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' })}</td>
+                <td>${quote.clientname || 'N/A'}</td>
+                <td>${quote.advisorname || 'No especificado'}</td>
                 <td><button class="btn archive-btn" data-id="${quote.id}">Descargar y Archivar</button></td>
             `;
             approvedTableBody.appendChild(row);
@@ -53,13 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (quote.status === 'archivada') {
                 actionsHTML = `<a href="/api/quote-requests/${quote.id}/pdf" class="btn" target="_blank">Descargar PDF</a>`;
             } else { // Rechazada
-                actionsHTML = `<button class="btn btn-delete view-rejection-reason-btn" data-reason="${quote.rejectionReason || 'No se especificó un motivo.'}">Ver Motivo</button>`;
+                // CORRECCIÓN: Se usan las propiedades en minúsculas
+                actionsHTML = `<button class="btn btn-delete view-rejection-reason-btn" data-reason="${quote.rejectionreason || 'No se especificó un motivo.'}">Ver Motivo</button>`;
             }
 
+            // CORRECCIÓN: Se usan las propiedades en minúsculas
             row.innerHTML = `
-                <td>${quote.quoteNumber || 'N/A'}</td>
-                <td>${quote.clientName || 'N/A'}</td>
-                <td>${new Date(quote.createdAt).toLocaleDateString()}</td>
+                <td>${quote.quotenumber || 'N/A'}</td>
+                <td>${quote.clientname || 'N/A'}</td>
+                <td>${new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' })}</td>
                 <td><strong>${quote.status}</strong></td>
                 <td>${actionsHTML}</td>
             `;
@@ -77,8 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
             });
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al archivar la cotización.');
+                // El error 404 hará que response.json() falle, así que manejamos el texto
+                const errorText = await response.text();
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.message || 'Error al archivar la cotización.');
+                } catch (e) {
+                     throw new Error(errorText || 'Error al archivar la cotización.');
+                }
             }
             
             // Refresh the tables
