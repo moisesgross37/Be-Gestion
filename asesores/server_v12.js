@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v13.3-debug ESTABLE) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v13.4 ESTABLE) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -189,16 +189,21 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
         res.status(500).json({ message: "Error al calcular la estimación." });
     }
 });
+
 app.post('/api/quote-requests', requireLogin, async (req, res) => { 
     const quoteInput = req.body; 
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
 
-    // --- LÍNEA DE DEPURACIÓN ---
-    console.log('--- DEBUG: DATOS CALCULADOS PARA GUARDAR ---', calculationResult);
-
     const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
-    const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; 
+    
+    // --- CORRECCIÓN ---
+    // Se extraen los datos de la estructura correcta que nos mostró el log.
+    const { facilidadesAplicadas, items, totals } = calculationResult;
+    const precios = calculationResult.calculatedPrices[0] || {}; // Usar un objeto vacío si no hay precios
+    const precioFinalPorEstudiante = precios.precioFinalPorEstudiante;
+    const estudiantesParaFacturar = precios.estudiantesFacturables;
+
     try { 
         await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
         res.status(201).json({ message: 'Cotización guardada con éxito' }); 
@@ -207,6 +212,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' }); 
     } 
 });
+
 app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM quotes ORDER BY createdat DESC');
@@ -301,7 +307,6 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
             bulletRadius: 1.5,
         });
         doc.moveDown();
-        // AÑADIDO: Lógica para mostrar las facilidades (cortesías)
         if(quote.facilidadesaplicadas && quote.facilidadesaplicadas.length > 0) {
             doc.font('Helvetica-Bold').fontSize(10).text('Facilidades Aplicadas:');
             doc.moveDown(0.5);
@@ -331,5 +336,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v13.3-debug ESTABLE) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v13.4 ESTABLE) corriendo en el puerto ${PORT}`);
 });
