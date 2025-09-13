@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v13.4 ESTABLE) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v13.5-debug ESTABLE) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -189,7 +189,6 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
         res.status(500).json({ message: "Error al calcular la estimación." });
     }
 });
-
 app.post('/api/quote-requests', requireLogin, async (req, res) => { 
     const quoteInput = req.body; 
     const dbDataForCalculation = { products: products }; 
@@ -197,12 +196,14 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
 
     const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
     
-    // --- CORRECCIÓN ---
-    // Se extraen los datos de la estructura correcta que nos mostró el log.
     const { facilidadesAplicadas, items, totals } = calculationResult;
-    const precios = calculationResult.calculatedPrices[0] || {}; // Usar un objeto vacío si no hay precios
+    const precios = calculationResult.calculatedPrices[0] || {};
     const precioFinalPorEstudiante = precios.precioFinalPorEstudiante;
     const estudiantesParaFacturar = precios.estudiantesFacturables;
+
+    // --- LÍNEAS DE DEPURACIÓN AÑADIDAS ---
+    console.log('--- DEBUG: VALOR FINAL DE precioFinalPorEstudiante ---', precioFinalPorEstudiante);
+    console.log('--- DEBUG: VALOR FINAL DE estudiantesParaFacturar ---', estudiantesParaFacturar);
 
     try { 
         await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
@@ -212,7 +213,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' }); 
     } 
 });
-
 app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM quotes ORDER BY createdat DESC');
@@ -336,5 +336,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v13.4 ESTABLE) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v13.5-debug ESTABLE) corriendo en el puerto ${PORT}`);
 });
