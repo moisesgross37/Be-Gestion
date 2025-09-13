@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v13.1 ESTABLE) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v13.2 ESTABLE) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -77,6 +77,7 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
+// ... (todas las rutas excepto la del PDF se mantienen igual)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -99,7 +100,6 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// Users
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
     const { nombre, username, password, rol } = req.body;
@@ -116,12 +116,10 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Advisors
 app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Visits
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact } = req.body;
@@ -150,7 +148,6 @@ app.post('/api/visits', requireLogin, async (req, res) => {
     }
 });
 
-// Centers
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.get('/api/centers/search', requireLogin, async (req, res) => {
     const searchTerm = (req.query.q || '').toLowerCase();
@@ -163,17 +160,14 @@ app.get('/api/centers/search', requireLogin, async (req, res) => {
     }
 });
 
-// Zones
 app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/zones', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newZone = await pool.query('INSERT INTO zones (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newZone.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/zones/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Zona eliminada' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Comments
 app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/comments', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newComment = await pool.query('INSERT INTO comments (text) VALUES ($1) RETURNING *', [name]); res.status(201).json(newComment.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Comentario eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// Quote Logic
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT quotenumber FROM quotes WHERE quotenumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quotenumber FROM 5) AS INTEGER) DESC LIMIT 1`);
@@ -253,6 +247,7 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
     }
 });
 
+// --- RUTA DEL PDF RECONSTRUIDA ---
 app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
     try {
         const quoteId = req.params.id;
@@ -268,72 +263,94 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
 
+        // --- FONDO DE PÁGINA (MEMBRETE) ---
         const backgroundImagePath = path.join(__dirname, 'plantillas', 'Timbrada BE EVENTOS.jpg');
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         }
 
-        const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' }) : '';
-        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 470, 138, { align: 'left' });
-        doc.font('Helvetica').fontSize(10).text(quoteDate, 470, 158, { align: 'left' });
-        doc.font('Helvetica-Bold').fontSize(16).text('PROPUESTA', { align: 'center' });
-        doc.moveDown();
-        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`);
-        doc.text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`);
-        doc.moveDown();
-        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado para los servicios solicitados, diseñados para ofrecer una experiencia memorable a sus estudiantes.', { align: 'justify', width: 500 });
-        
-        let y = doc.y + 15;
-        doc.moveTo(50, y).lineTo(550, y).stroke();
-        y += 15;
+        // --- CONTENIDO DEL PDF ---
+        const pageMargin = 50;
+        const contentWidth = doc.page.width - (pageMargin * 2);
 
+        // --- METADATOS (DERECHA) ---
+        const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' }) : '';
+        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', { align: 'right' });
+        doc.font('Helvetica').fontSize(10).text(quoteDate, { align: 'right' });
+        doc.moveDown(2);
+
+        // --- TÍTULO ---
+        doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', { align: 'center' });
+        doc.moveDown();
+
+        // --- INFO CLIENTE Y ASESOR ---
+        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`);
+        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`);
+        doc.moveDown();
+
+        // --- PÁRRAFO INTRODUCTORIO ---
+        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', { 
+            align: 'justify',
+            width: contentWidth
+        });
+        doc.moveDown(2);
+
+        // --- LISTA DE PRODUCTOS Y SERVICIOS ---
         const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
         if (selectedProducts.length > 0) {
-            doc.font('Helvetica-Bold').fontSize(12).text('Servicios Incluidos:', 50, y);
-            y = doc.y + 5;
             selectedProducts.forEach(product => {
-                doc.font('Helvetica-Bold').fontSize(11).text(product['PRODUCTO / SERVICIO'].trim(), 50, y);
-                y = doc.y + 2;
+                doc.font('Helvetica-Bold').fontSize(12).text(product['PRODUCTO / SERVICIO'].trim());
+                doc.moveDown(0.5);
                 const detail = product['DETALLE / INCLUYE'];
                 if (detail && detail.trim() !== '') {
                     const detailItems = detail.split(',').map(item => `- ${item.trim()}`);
-                    doc.font('Helvetica').fontSize(10).text(detailItems.join('\n'), 60, y, { width: 450, lineGap: 2 });
-                    y = doc.y + 10;
+                    doc.font('Helvetica').fontSize(10).list(detailItems, {
+                        width: contentWidth - 20,
+                        lineGap: 2,
+                        bulletIndent: 20
+                    });
                 }
-                y += 5;
+                doc.moveDown();
             });
         }
-
-        y = Math.max(y, doc.y) + 15;
-        doc.moveTo(50, y).lineTo(550, y).stroke();
-        y += 15;
-
-        doc.font('Helvetica-Bold').fontSize(12).text('Inversión por Estudiante:', 50, y, { align: 'right', width: 400 });
-        const pricePerStudent = quote.preciofinalporestudiante || 0;
-        doc.font('Helvetica-Bold').fontSize(14).text(`RD$ ${parseFloat(pricePerStudent).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
-        y = doc.y + 15;
-
-        doc.moveTo(50, y).lineTo(550, y).stroke();
-        y += 15;
-
-        doc.font('Helvetica-Bold').fontSize(10).text('Comentarios y Condiciones:', 50, y);
-        y += 15;
-        doc.font('Helvetica').fontSize(10).text(`- Presupuesto basado en la participación de ${quote.estudiantesparafacturar || 0} estudiantes.`, 50, y);
-        y += 15;
-        doc.font('Helvetica').fontSize(10).text('- El pago se realiza en dos cuotas: 50% para reservar la fecha y 50% el día del evento.', 50, y);
-        y += 15;
-        if(quote.facilidadesaplicadas && quote.facilidadesaplicadas.length > 0) {
-            doc.font('Helvetica-Bold').fontSize(10).text('Facilidades Aplicadas:', 50, y);
-            y += 15;
-            doc.font('Helvetica').fontSize(10).list(quote.facilidadesaplicadas, 50, y);
-        }
         
+        // --- LÍNEA SEPARADORA ---
+        doc.moveTo(pageMargin, doc.y).lineTo(doc.page.width - pageMargin, doc.y).stroke();
+        doc.moveDown();
+
+        // --- PRECIO FINAL ---
+        const pricePerStudent = quote.preciofinalporestudiante || 0;
+        doc.font('Helvetica-Bold').fontSize(12).text('Presupuesto por estudiante:', { align: 'right', width: contentWidth - 110 });
+        doc.font('Helvetica-Bold').fontSize(14).text(`RD$ ${parseFloat(pricePerStudent).toFixed(2)}`, { align: 'right' });
+        doc.moveDown();
+
+        // --- COMENTARIOS Y CONDICIONES ---
+        doc.font('Helvetica-Bold').fontSize(12).text('Comentarios y Condiciones:');
+        doc.moveDown(0.5);
+        const conditions = [
+            `Cálculos basados en un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`,
+            'Condiciones de Pago a debatir.'
+        ];
+        doc.font('Helvetica').fontSize(10).list(conditions, {
+            width: contentWidth,
+            lineGap: 2,
+            bulletRadius: 1.5,
+        });
+        doc.moveDown();
+
+        // --- PÁRRAFO DE CIERRE ---
+        doc.font('Helvetica').fontSize(10).text('Agradecemos la oportunidad de colaborar con usted y estamos comprometidos a brindarle un servicio excepcional. Si tiene alguna pregunta o necesita más detalles, no dude en ponerse en contacto con nosotros.', {
+            align: 'justify',
+            width: contentWidth
+        });
+
         doc.end();
     } catch (error) {
         console.error('Error al generar el PDF:', error);
         res.status(500).send('Error interno al generar el PDF');
     }
 });
+
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
@@ -343,5 +360,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v13.1 ESTABLE) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v13.2 ESTABLE) corriendo en el puerto ${PORT}`);
 });
