@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v14.3 PRODUCCIÓN) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v15.0 PRODUCCIÓN) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -77,6 +77,7 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
+// ... (Otras rutas se mantienen igual)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -236,6 +237,18 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
+
+// --- NUEVA RUTA PARA ARCHIVAR ---
+app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        await pool.query("UPDATE quotes SET status = 'archivada' WHERE id = $1", [req.params.id]);
+        res.status(200).json({ message: 'Cotización archivada con éxito' });
+    } catch (err) {
+        console.error('Error archivando cotización:', err);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
 app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
     try {
         const quoteId = req.params.id;
@@ -248,41 +261,27 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
-        
         const backgroundImagePath = path.join(__dirname, 'membrete.jpg');
-
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         }
         const pageMargin = 50;
         const contentWidth = doc.page.width - (pageMargin * 2);
-
-        // --- INICIO DEL CONTENIDO DE TEXTO (DESPLAZADO HACIA ABAJO) ---
-        // Se establece una posición Y inicial para dejar espacio para el membrete.
         let currentY = 150; 
-
         const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' }) : '';
-        
-        // Se usan coordenadas X, Y para posicionar estos elementos con precisión.
         doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 450, currentY, { align: 'left' });
         doc.font('Helvetica').fontSize(10).text(quoteDate, 450, currentY + 20, { align: 'left' });
-
         doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', pageMargin, currentY + 40, { align: 'center' });
-        
-        currentY += 80; // Aumentamos la posición Y para el siguiente bloque.
-
+        currentY += 80;
         doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`, pageMargin, currentY);
         currentY += 20;
         doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`, pageMargin, currentY);
         currentY += 30;
-
         doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', pageMargin, currentY, { 
             align: 'justify',
             width: contentWidth
         });
-        
-        doc.y = doc.y + 20; // Actualizamos la posición Y antes de continuar.
-        
+        doc.y = doc.y + 20;
         const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
         if (selectedProducts.length > 0) {
             selectedProducts.forEach(product => {
@@ -300,7 +299,6 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
                 doc.moveDown();
             });
         }
-        
         doc.moveTo(pageMargin, doc.y).lineTo(doc.page.width - pageMargin, doc.y).stroke();
         doc.moveDown();
         const pricePerStudent = quote.preciofinalporestudiante || 0;
@@ -348,5 +346,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v14.3 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v15.0 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
 });
