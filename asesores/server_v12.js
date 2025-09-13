@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.9 CON GENERACIÓN DE PDF RESTAURADA) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.10 FINAL CON CORRECCIÓN DE BÚSQUEDA) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -123,7 +123,7 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { cons
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 // Visits
-app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY "visitDate" DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY "visitdate" DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact } = req.body;
     const client = await pool.connect();
@@ -132,7 +132,7 @@ app.post('/api/visits', requireLogin, async (req, res) => {
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1', [centerName]);
         if (centerResult.rows.length === 0) {
             await client.query(
-                'INSERT INTO centers (name, contactName, contactNumber) VALUES ($1, $2, $3)',
+                'INSERT INTO centers (name, "contactName", "contactNumber") VALUES ($1, $2, $3)',
                 [centerName, coordinatorName || '', coordinatorContact || '']
             );
         }
@@ -178,7 +178,7 @@ app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => 
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT "quoteNumber" FROM quotes WHERE "quoteNumber" LIKE 'COT-%' ORDER BY CAST(SUBSTRING("quoteNumber" FROM 5) AS INTEGER) DESC LIMIT 1`);
-        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quoteNumber.split('-')[1]) : 240000;
+        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
         const nextNumber = lastNumber + 1;
         res.json({ quoteNumber: `COT-${nextNumber}` });
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
@@ -212,21 +212,22 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteI
 
 app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM quotes ORDER BY "createdAt" DESC');
+        // CORRECCIÓN: Se usa el nombre de columna correcto en minúsculas
+        const result = await pool.query('SELECT * FROM quotes ORDER BY createdat DESC');
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY "createdAt" DESC`);
+        // CORRECCIÓN: Se usa el nombre de columna correcto en minúsculas
+        const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdat DESC`);
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching pending quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (req, res) => { try { await pool.query("UPDATE quotes SET status = 'aprobada' WHERE id = $1", [req.params.id]); res.status(200).json({ message: 'Cotización aprobada con éxito' }); } catch (err) { console.error('Error aprobando cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
 
-// RESTAURADO: Ruta para generar el PDF de la cotización
 app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
     try {
         const quoteId = req.params.id;
@@ -242,13 +243,11 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
 
-        // --- FONDO DE PÁGINA (MEMBRETE) ---
         const backgroundImagePath = path.join(__dirname, 'plantillas', 'Timbrada BE EVENTOS.jpg');
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         }
 
-        // --- DIBUJAR CONTENIDO ---
         const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO') : '';
         doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 470, 138, { align: 'left' });
         doc.font('Helvetica').fontSize(10).text(quoteDate, 470, 158, { align: 'left' });
@@ -296,7 +295,6 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
     }
 });
 
-
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
@@ -305,5 +303,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.9 CON PDF) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.10 FINAL Y CORREGIDO) corriendo en el puerto ${PORT}`);
 });
