@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.10 FINAL CON CORRECCIÓN DE BÚSQUEDA) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.11 FINAL Y ESTABLE) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -31,7 +31,7 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
             CREATE TABLE IF NOT EXISTS comments ( id SERIAL PRIMARY KEY, text TEXT NOT NULL );
             CREATE TABLE IF NOT EXISTS zones ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
-            CREATE TABLE IF NOT EXISTS centers ( id SERIAL PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), contactName VARCHAR(255), contactNumber VARCHAR(50) );
+            CREATE TABLE IF NOT EXISTS centers ( id SERIAL PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), contactName VARCHAR(255), contactNumber VARCHAR(255) );
             CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quoteNumber VARCHAR(50), clientName VARCHAR(255), advisorName VARCHAR(255), studentCount INTEGER, productIds INTEGER[], precioFinalPorEstudiante NUMERIC, estudiantesParaFacturar INTEGER, facilidadesAplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionReason TEXT, createdAt TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centerName VARCHAR(255), advisorName VARCHAR(255), visitDate DATE, commentText TEXT, createdAt TIMESTAMPTZ DEFAULT NOW() );
         `);
@@ -123,7 +123,7 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { cons
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 // Visits
-app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY "visitdate" DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact } = req.body;
     const client = await pool.connect();
@@ -131,13 +131,15 @@ app.post('/api/visits', requireLogin, async (req, res) => {
         await client.query('BEGIN');
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1', [centerName]);
         if (centerResult.rows.length === 0) {
+            // CORRECCIÓN: Se usan nombres de columna en minúsculas y sin comillas para la inserción
             await client.query(
-                'INSERT INTO centers (name, "contactName", "contactNumber") VALUES ($1, $2, $3)',
+                'INSERT INTO centers (name, contactname, contactnumber) VALUES ($1, $2, $3)',
                 [centerName, coordinatorName || '', coordinatorContact || '']
             );
         }
+        // CORRECCIÓN: Se usan nombres de columna en minúsculas y sin comillas para la inserción
         await client.query(
-            'INSERT INTO visits ("centerName", "advisorName", "visitDate", "commentText") VALUES ($1, $2, $3, $4)',
+            'INSERT INTO visits (centername, advisorname, visitdate, commenttext) VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
         );
         await client.query('COMMIT');
@@ -208,11 +210,10 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
     }
 });
 
-app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes ("clientName", "advisorName", "studentCount", "productIds", "precioFinalPorEstudiante", "estudiantesParaFacturar", "facilidadesAplicadas", items, totals, status, "quoteNumber") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
+app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
 
 app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
-        // CORRECCIÓN: Se usa el nombre de columna correcto en minúsculas
         const result = await pool.query('SELECT * FROM quotes ORDER BY createdat DESC');
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
@@ -220,7 +221,6 @@ app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
-        // CORRECCIÓN: Se usa el nombre de columna correcto en minúsculas
         const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdat DESC`);
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching pending quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
@@ -303,5 +303,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.10 FINAL Y CORREGIDO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.11 FINAL Y ESTABLE) corriendo en el puerto ${PORT}`);
 });
