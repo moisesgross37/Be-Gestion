@@ -77,12 +77,13 @@
                     const centers = await response.json();
                     centersTableBody.innerHTML = '';
                     if (centers.length === 0) {
+                        // CORRECCIÓN: Colspan ajustado a 4 columnas
                         centersTableBody.innerHTML = '<tr><td colspan="4">No hay centros registrados.</td></tr>';
                         return;
                     }
                     centers.forEach(center => {
                         const row = document.createElement('tr');
-                        // CORRECCIÓN: Se usan nombres de columna en minúsculas
+                        // CORRECCIÓN: Se usan nombres de columna en minúsculas y se eliminó la columna de código que no existía en el <thead>
                         row.innerHTML = `
                             <td>${center.name}</td>
                             <td>${center.contactname || ''}</td>
@@ -96,6 +97,7 @@
                     });
                 } catch (error) {
                     console.error('Error al mostrar centros:', error);
+                     // CORRECCIÓN: Colspan ajustado a 4 columnas
                     centersTableBody.innerHTML = '<tr><td colspan="4">Error al cargar los centros.</td></tr>';
                 }
             };
@@ -103,7 +105,6 @@
             const openEditModal = (center) => {
                 editCenterId.value = center.id;
                 editCenterName.value = center.name;
-                // CORRECCIÓN: Se usan nombres de columna en minúsculas
                 editContactName.value = center.contactname || '';
                 editContactNumber.value = center.contactnumber || '';
                 modal.style.display = 'block';
@@ -111,7 +112,7 @@
 
             const handleTableClick = async (event) => {
                 const target = event.target;
-                if (!target.dataset.id) return; // Salir si el elemento no tiene data-id
+                if (!target.dataset.id) return;
                 
                 const centerId = parseInt(target.dataset.id, 10);
 
@@ -129,7 +130,7 @@
                     try {
                         const response = await fetch(`/api/centers/${centerId}`, { method: 'DELETE' });
                         if (!response.ok) throw new Error('Error al eliminar el centro.');
-                        await fetchAndDisplayCenters(); // Recargar la tabla
+                        await fetchAndDisplayCenters();
                     } catch (error) {
                         console.error(error);
                         alert('No se pudo eliminar el centro.');
