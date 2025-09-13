@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.3 FINAL Y SEGURO) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.4 FINAL Y COMPLETO) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
 const { Pool } = require('pg');
+const pgSession = require('connect-pg-simple')(session);
 
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
@@ -33,17 +34,20 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS centers ( id SERIAL PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), contactName VARCHAR(255), contactNumber VARCHAR(50) );
             CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quoteNumber VARCHAR(50), clientName VARCHAR(255), advisorName VARCHAR(255), studentCount INTEGER, productIds INTEGER[], precioFinalPorEstudiante NUMERIC, estudiantesParaFacturar INTEGER, facilidadesAplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionReason TEXT, createdAt TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centerName VARCHAR(255), advisorName VARCHAR(255), visitDate DATE, commentText TEXT, createdAt TIMESTAMPTZ DEFAULT NOW() );
+            CREATE TABLE IF NOT EXISTS "session" ( "sid" varchar NOT NULL COLLATE "default", "sess" json NOT NULL, "expire" timestamp(6) NOT NULL ) WITH (OIDS=FALSE);
+            ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
         `);
         console.log('✅ Base de datos inicializada y tablas aseguradas.');
     } catch (err) {
-        console.error('Error al inicializar la base de datos:', err);
+        if (err.code !== '42P07') { 
+           console.error('Error al inicializar la base de datos:', err);
+        }
     } finally {
         client.release();
     }
 };
 
 let products = [];
-
 const loadProducts = () => {
     const csvPath = path.join(__dirname, 'Productos.csv');
     if (!fs.existsSync(csvPath)) { return; }
@@ -57,23 +61,27 @@ const loadProducts = () => {
         });
 };
 
-// CORRECCIÓN: Configuración de sesión robusta para producción
-app.set('trust proxy', 1); // Necesario para que las cookies seguras funcionen detrás de un proxy como Render
+app.set('trust proxy', 1);
 app.use(session({
-    secret: 'un_secreto_mucho_mas_largo_y_seguro_para_produccion',
+    store: new pgSession({
+        pool: pool,
+        tableName: 'session'
+    }),
+    secret: 'un_secreto_mucho_mas_largo_y_seguro_para_produccion_final',
     resave: false,
-    saveUninitialized: false, // No guardar sesiones vacías
+    saveUninitialized: false,
     cookie: { 
-        secure: true, // Solo enviar cookies sobre HTTPS
-        httpOnly: true, // Prevenir acceso desde JavaScript del lado del cliente
-        sameSite: 'lax' // Protección contra ataques CSRF
+        secure: true,
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
     }
 }));
 
 const requireLogin = (req, res, next) => { if (!req.session.user) { return res.status(401).json({ message: 'No autenticado.' }); } next(); };
 const requireAdmin = checkRole(['Administrador']);
 
-// --- RUTAS DE API COMPLETAS Y CORREGIDAS ---
+// --- RUTAS DE API ---
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -89,9 +97,16 @@ app.post('/api/login', async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
-app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+app.post('/api/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) { return res.status(500).json({ message: 'No se pudo cerrar la sesión.' }); }
+        res.clearCookie('connect.sid');
+        res.status(200).json({ message: 'Sesión cerrada exitosamente.' });
+    });
+});
 
-// RESTAURADO: Se vuelve a poner el "candado" de seguridad en la creación de usuarios
+// Users
+app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
     const { nombre, username, password, rol } = req.body;
     try {
@@ -104,41 +119,37 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
-
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// Advisors
 app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// AÑADIDO: Ruta GET para obtener las visitas
-app.get('/api/visits', requireLogin, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC');
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
-});
+// Visits
+app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/visits', requireLogin, async (req, res) => { const { centerName, advisorName, visitDate, commentText } = req.body; try { await pool.query('INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)', [centerName, advisorName, visitDate, commentText]); res.status(201).json({ message: "Visita registrada" }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// Centers
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// AÑADIDO: Ruta GET para obtener el próximo número de cotización
+// RESTAURADO: Ruta para Zonas
+app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// RESTAURADO: Ruta para Comentarios
+app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// Quote Logic
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT MAX(id) as max_id FROM quotes');
-        const nextNumber = (result.rows[0].max_id || 240000) + 1;
+        const result = await pool.query("SELECT quoteNumber FROM quotes WHERE quoteNumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quoteNumber FROM 5) AS INTEGER) DESC LIMIT 1");
+        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
+        const nextNumber = lastNumber + 1;
         res.json({ quoteNumber: `COT-${nextNumber}` });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
+    } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
-// AÑADIDO: Ruta GET para obtener todos los datos necesarios para el formulario de cotización
 app.get('/api/data', requireLogin, async (req, res) => {
     try {
         const [advisors, comments, centers, zones] = await Promise.all([
@@ -147,30 +158,25 @@ app.get('/api/data', requireLogin, async (req, res) => {
             pool.query('SELECT * FROM centers ORDER BY name ASC'),
             pool.query('SELECT * FROM zones ORDER BY name ASC')
         ]);
-        res.json({
-            advisors: advisors.rows,
-            comments: comments.rows,
-            centers: centers.rows,
-            zones: zones.rows,
-            products: products // Los productos siguen viniendo del CSV en memoria
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
+        res.json({ advisors: advisors.rows, comments: comments.rows, centers: centers.rows, zones: zones.rows, products: products });
+    } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
 app.post('/api/quote-requests', requireLogin, async (req, res) => { const quoteInput = req.body; const dbDataForCalculation = { products: products }; const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; try { await pool.query( `INSERT INTO quotes (clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals, status, quoteNumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); res.status(201).json({ message: 'Cotización guardada con éxito' }); } catch (err) { console.error('Error al guardar cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
 
-// AÑADIDO: Ruta GET para obtener todas las cotizaciones
-app.get('/api/quote-requests', requireLogin, async (req, res) => {
+app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM quotes ORDER BY createdAt DESC");
         res.status(200).json(result.rows);
-    } catch (err) {
-        console.error('Error fetching quotes:', err);
-        res.status(500).json({ message: 'Error interno del servidor.' });
-    }
+    } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
+});
+
+// RESTAURADO: Ruta para Cotizaciones Pendientes
+app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdAt DESC");
+        res.status(200).json(result.rows);
+    } catch (err) { console.error('Error fetching pending quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
 
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (req, res) => { try { await pool.query("UPDATE quotes SET status = 'aprobada' WHERE id = $1", [req.params.id]); res.status(200).json({ message: 'Cotización aprobada con éxito' }); } catch (err) { console.error('Error aprobando cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
@@ -183,5 +189,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.3 FINAL Y SEGURO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.4 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
 });
