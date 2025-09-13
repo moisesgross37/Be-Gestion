@@ -1,33 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v13.3-debug) ==============
-// ... (todo el código anterior es exactamente el mismo) ...
-
-app.post('/api/quote-requests', requireLogin, async (req, res) => { 
-    const quoteInput = req.body; 
-    const dbDataForCalculation = { products: products }; 
-    const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
-
-    // --- LÍNEA DE DEPURACIÓN AÑADIDA ---
-    // Esta línea imprimirá en los logs de Render los datos exactos que se van a guardar.
-    console.log('--- DEBUG: DATOS CALCULADOS PARA GUARDAR ---', calculationResult);
-
-    const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
-    const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; 
-    try { 
-        await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
-        res.status(201).json({ message: 'Cotización guardada con éxito' }); 
-    } catch (err) { 
-        console.error('Error al guardar cotización:', err); 
-        res.status(500).json({ message: 'Error interno del servidor.' }); 
-    } 
-});
-
-// ... (todo el código siguiente es exactamente el mismo) ...
-// ============== El resto del archivo server.js v13.2 se mantiene igual ==============
-// (Solo he mostrado la sección modificada para ser breve, 
-// pero debes reemplazar el archivo completo con el código v13.2 y añadir esta línea)
-
-// --- CÓDIGO COMPLETO PARA EVITAR DUDAS ---
-// Copia y pega todo este bloque en tu server.js
+// ============== SERVIDOR DE ASESORES Y VENTAS (v13.3-debug ESTABLE) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -223,7 +194,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
 
-    // --- LÍNEA DE DEPURACIÓN AÑADIDA ---
+    // --- LÍNEA DE DEPURACIÓN ---
     console.log('--- DEBUG: DATOS CALCULADOS PARA GUARDAR ---', calculationResult);
 
     const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
