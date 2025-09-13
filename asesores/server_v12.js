@@ -77,7 +77,6 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
-// ... (todas las rutas de login, users, advisors, etc. se mantienen igual)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -239,7 +238,6 @@ app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, 
 
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (req, res) => { try { await pool.query("UPDATE quotes SET status = 'aprobada' WHERE id = $1", [req.params.id]); res.status(200).json({ message: 'Cotización aprobada con éxito' }); } catch (err) { console.error('Error aprobando cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
 
-// AÑADIDO: Ruta para rechazar una cotización
 app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
@@ -336,7 +334,6 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         res.status(500).send('Error interno al generar el PDF');
     }
 });
-
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
