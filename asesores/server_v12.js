@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v14.2 PRODUCCIÓN) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v14.3 PRODUCCIÓN) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -249,7 +249,6 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
         
-        // --- RUTA FINAL Y SEGURA PARA EL MEMBRETE ---
         const backgroundImagePath = path.join(__dirname, 'membrete.jpg');
 
         if (fs.existsSync(backgroundImagePath)) {
@@ -257,20 +256,33 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         }
         const pageMargin = 50;
         const contentWidth = doc.page.width - (pageMargin * 2);
+
+        // --- INICIO DEL CONTENIDO DE TEXTO (DESPLAZADO HACIA ABAJO) ---
+        // Se establece una posición Y inicial para dejar espacio para el membrete.
+        let currentY = 150; 
+
         const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' }) : '';
-        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', { align: 'right' });
-        doc.font('Helvetica').fontSize(10).text(quoteDate, { align: 'right' });
-        doc.moveDown(2);
-        doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', { align: 'center' });
-        doc.moveDown();
-        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`);
-        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`);
-        doc.moveDown();
-        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', { 
+        
+        // Se usan coordenadas X, Y para posicionar estos elementos con precisión.
+        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 450, currentY, { align: 'left' });
+        doc.font('Helvetica').fontSize(10).text(quoteDate, 450, currentY + 20, { align: 'left' });
+
+        doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', pageMargin, currentY + 40, { align: 'center' });
+        
+        currentY += 80; // Aumentamos la posición Y para el siguiente bloque.
+
+        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`, pageMargin, currentY);
+        currentY += 20;
+        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`, pageMargin, currentY);
+        currentY += 30;
+
+        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', pageMargin, currentY, { 
             align: 'justify',
             width: contentWidth
         });
-        doc.moveDown(2);
+        
+        doc.y = doc.y + 20; // Actualizamos la posición Y antes de continuar.
+        
         const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
         if (selectedProducts.length > 0) {
             selectedProducts.forEach(product => {
@@ -288,6 +300,7 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
                 doc.moveDown();
             });
         }
+        
         doc.moveTo(pageMargin, doc.y).lineTo(doc.page.width - pageMargin, doc.y).stroke();
         doc.moveDown();
         const pricePerStudent = quote.preciofinalporestudiante || 0;
@@ -335,5 +348,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v14.2 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v14.3 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
 });
