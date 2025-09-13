@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v12.7 CON CÁLCULO EN TIEMPO REAL) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v12.8 FINAL CON CREACIÓN DE CENTROS) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -124,11 +124,45 @@ app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => 
 
 // Visits
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitDate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.post('/api/visits', requireLogin, async (req, res) => { const { centerName, advisorName, visitDate, commentText } = req.body; try { await pool.query('INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)', [centerName, advisorName, visitDate, commentText]); res.status(201).json({ message: "Visita registrada" }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// CORRECCIÓN: Se restaura la lógica para crear un centro si no existe al registrar una visita
+app.post('/api/visits', requireLogin, async (req, res) => {
+    const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN'); // Iniciar transacción
+
+        // 1. Verificar si el centro ya existe
+        let centerResult = await client.query('SELECT id FROM centers WHERE name = $1', [centerName]);
+        
+        // 2. Si no existe, crearlo
+        if (centerResult.rows.length === 0) {
+            console.log(`El centro "${centerName}" no existe, se creará uno nuevo.`);
+            await client.query(
+                'INSERT INTO centers (name, contactName, contactNumber) VALUES ($1, $2, $3)',
+                [centerName, coordinatorName || '', coordinatorContact || '']
+            );
+        }
+
+        // 3. Registrar la visita
+        await client.query(
+            'INSERT INTO visits (centerName, advisorName, visitDate, commentText) VALUES ($1, $2, $3, $4)',
+            [centerName, advisorName, visitDate, commentText]
+        );
+
+        await client.query('COMMIT'); // Confirmar transacción
+        res.status(201).json({ message: "Visita registrada y centro asegurado" });
+    } catch (err) {
+        await client.query('ROLLBACK'); // Revertir en caso de error
+        console.error("Error al registrar visita:", err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    } finally {
+        client.release();
+    }
+});
 
 // Centers
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-// NUEVO: Ruta para buscar centros (clientes) para el autocompletado
 app.get('/api/centers/search', requireLogin, async (req, res) => {
     const searchTerm = (req.query.q || '').toLowerCase();
     try {
@@ -172,13 +206,9 @@ app.get('/api/data', requireLogin, async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
-// NUEVO: Ruta para calcular la estimación en tiempo real
 app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
     const quoteInput = req.body;
-    const dbDataForCalculation = {
-        products: products
-        // Aquí podrías añadir más datos de la DB si el motor de precios los necesita
-    };
+    const dbDataForCalculation = { products: products };
     try {
         const estimate = assembleQuote(quoteInput, dbDataForCalculation);
         res.json(estimate);
@@ -214,5 +244,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v12.7 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v12.8 FINAL Y COMPLETO) corriendo en el puerto ${PORT}`);
 });
