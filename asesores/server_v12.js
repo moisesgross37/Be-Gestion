@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v13.5-debug ESTABLE) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v14.0 PRODUCCIÓN) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -201,10 +201,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const precioFinalPorEstudiante = precios.precioFinalPorEstudiante;
     const estudiantesParaFacturar = precios.estudiantesFacturables;
 
-    // --- LÍNEAS DE DEPURACIÓN AÑADIDAS ---
-    console.log('--- DEBUG: VALOR FINAL DE precioFinalPorEstudiante ---', precioFinalPorEstudiante);
-    console.log('--- DEBUG: VALOR FINAL DE estudiantesParaFacturar ---', estudiantesParaFacturar);
-
     try { 
         await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
         res.status(201).json({ message: 'Cotización guardada con éxito' }); 
@@ -336,5 +332,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v13.5-debug ESTABLE) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v14.0 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
 });
