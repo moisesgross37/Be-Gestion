@@ -17,7 +17,7 @@
         <main>
             <div class="card">
                 <h2>Centros de Estudio Registrados</h2>
-                <p>Aquí puedes editar los centros para corregir sus datos.</p>
+                <p>Aquí puedes editar o eliminar los centros registrados.</p>
                 <table class="centers-table">
                     <thead>
                         <tr>
@@ -28,14 +28,12 @@
                         </tr>
                     </thead>
                     <tbody id="centers-table-body">
-                        <!-- Filas de centros se cargarán aquí -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </main>
     </div>
 
-    <!-- Ventana Modal para Editar Centro -->
     <div id="edit-center-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -79,16 +77,16 @@
                     const centers = await response.json();
                     centersTableBody.innerHTML = '';
                     if (centers.length === 0) {
-                        centersTableBody.innerHTML = '<tr><td colspan="5">No hay centros registrados.</td></tr>';
+                        centersTableBody.innerHTML = '<tr><td colspan="4">No hay centros registrados.</td></tr>';
                         return;
                     }
                     centers.forEach(center => {
                         const row = document.createElement('tr');
+                        // CORRECCIÓN: Se usan nombres de columna en minúsculas
                         row.innerHTML = `
-                            <td>${center.code || 'N/A'}</td>
                             <td>${center.name}</td>
-                            <td>${center.contactName || ''}</td>
-                            <td>${center.contactNumber || ''}</td>
+                            <td>${center.contactname || ''}</td>
+                            <td>${center.contactnumber || ''}</td>
                             <td>
                                 <button class="btn btn-edit" data-id="${center.id}">Editar</button>
                                 <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
@@ -98,20 +96,23 @@
                     });
                 } catch (error) {
                     console.error('Error al mostrar centros:', error);
-                    centersTableBody.innerHTML = '<tr><td colspan="5">Error al cargar los centros.</td></tr>';
+                    centersTableBody.innerHTML = '<tr><td colspan="4">Error al cargar los centros.</td></tr>';
                 }
             };
 
             const openEditModal = (center) => {
                 editCenterId.value = center.id;
                 editCenterName.value = center.name;
-                editContactName.value = center.contactName || '';
-                editContactNumber.value = center.contactNumber || '';
+                // CORRECCIÓN: Se usan nombres de columna en minúsculas
+                editContactName.value = center.contactname || '';
+                editContactNumber.value = center.contactnumber || '';
                 modal.style.display = 'block';
             };
 
             const handleTableClick = async (event) => {
                 const target = event.target;
+                if (!target.dataset.id) return; // Salir si el elemento no tiene data-id
+                
                 const centerId = parseInt(target.dataset.id, 10);
 
                 if (target.classList.contains('btn-edit')) {
