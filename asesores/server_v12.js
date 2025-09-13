@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v14.0 PRODUCCIÓN) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v14.2 PRODUCCIÓN) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -248,7 +248,10 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
-        const backgroundImagePath = path.join(__dirname, 'plantillas', 'Timbrada BE EVENTOS.jpg');
+        
+        // --- RUTA FINAL Y SEGURA PARA EL MEMBRETE ---
+        const backgroundImagePath = path.join(__dirname, 'membrete.jpg');
+
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         }
@@ -332,5 +335,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v14.0 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v14.2 PRODUCCIÓN) corriendo en el puerto ${PORT}`);
 });
